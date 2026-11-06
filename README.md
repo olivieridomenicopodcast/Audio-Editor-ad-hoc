@@ -7,3 +7,5 @@ Editor audio essenziale per il telefono (PWA), pensato per montare al volo e poi
 Si apre da: https://olivieridomenicopodcast.github.io/Audio-Editor-ad-hoc/ (GitHub Pages da `main`).
 
 Prova della logica: `node scripts/prova-modello.mjs`.
+
+L'audio esce **identico** a come entra (WAV letti e scritti campione per campione, nessun effetto né ricampionamento): verificato con `node scripts/prova-neutro.cjs`.

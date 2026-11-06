@@ -24,7 +24,15 @@ PWA (si pubblica con GitHub Pages da `main`, cartella root) per **montare l'audi
 - **Fade**: angoli in alto della clip selezionata (sinistro = fade in, destro = fade out). Curva a potenza costante (seno/coseno).
 - **Crossfade**: la clip selezionata si sovrappone alla precedente di N ms.
 - Su ogni taglio non continuo c'è un micro-declick di 3 ms (`DECLICK`) contro i click.
-- Export: WAV unico (OfflineAudioContext) oppure zip di clip separate + `posizioni.txt` (per ricomporle in Pro Tools).
+- Export: WAV unico oppure zip di clip separate + `posizioni.txt` (per ricomporle in Pro Tools).
+
+## Neutralità dell'audio (regola ferrea)
+L'audio deve uscire **identico** a come entra: niente effetti, niente ricampionamenti nascosti, niente guadagni.
+- I WAV (16/24/32 bit int, float32) si leggono con `leggiWav` in `app/audio.js`, **non** con `decodeAudioData` (Chrome converte i campioni con scale diverse tra positivi e negativi e può ricampionare). mp3/m4a/ecc. passano dal decodificatore del browser (sono già compressi: l'identità vale dal decodificato in poi).
+- L'export **non usa il Web Audio**: `renderizzaDiretto` copia i campioni uno a uno alla frequenza del progetto (= quella del primo file). Dove non ci sono dissolvenze i campioni sono identici all'originale.
+- Il micro-declick (3 ms) c'è solo sui bordi che hai tagliato tu; inizio/fine naturali dei file restano intatti.
+- Codifica WAV: scala simmetrica ×32768 / ×8388608 (così la lettura→scrittura è esatta). Nessun dither.
+- **Dopo ogni modifica a import/export/modello** esegui `node scripts/prova-neutro.cjs` (serve `python3 -m http.server 8765` nella cartella del repo): deve dire che le prove passano.
 
 ## Numero di build
 **Prima di OGNI commit** esegui: `sh scripts/aggiorna-build.sh && git add app/build.js`. Per l'app «build N» = numero di commit.
@@ -33,4 +41,4 @@ PWA (si pubblica con GitHub Pages da `main`, cartella root) per **montare l'audi
 Stale-while-revalidate. Ogni file nuovo usato dall'app va aggiunto alla lista `FILE`.
 
 ## Verifiche prima di consegnare
-`node scripts/prova-modello.mjs` e una prova con Playwright (viewport da telefono, nessun errore in console; importa due WAV, taglia, elimina, crossfade, esporta).
+`node scripts/prova-modello.mjs`, `node scripts/prova-neutro.cjs` e una prova con Playwright (viewport da telefono, nessun errore in console; importa due WAV, taglia, elimina, crossfade, esporta).

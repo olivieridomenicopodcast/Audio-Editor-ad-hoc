@@ -1,14 +1,15 @@
 // app.js - interfaccia dell'editor: timeline su canvas, gesti, riproduzione, esportazione.
 import { BUILD } from './build.js';
 import * as M from './modello.js';
-import { contesto, decodifica, calcolaPicchi, programma, renderizza, codificaWav } from './audio.js';
+import { contesto, decodificaFile, ricampiona, calcolaPicchi, programma, renderizzaDiretto, codificaWav } from './audio.js';
 import { progettoSalva, progettoLeggi, audioSalva, audioLeggi, tuttoSvuota } from './idb.js';
 import { zipStore } from './zip.js';
 
 const $ = (s) => document.querySelector(s);
 
 /* ---------- stato ---------- */
-const S = { clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null };
+const S = { clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0 };
+if (location.search.includes('debug')) window.__S = S; // solo per le prove automatiche
 const buffers = new Map();   // id sorgente → AudioBuffer
 const picchi = new Map();    // id sorgente → picchi per la forma d'onda
 const storia = M.nuovaStoria();
@@ -63,7 +64,7 @@ let guardaT;
 function guardia() {
   clearTimeout(guardaT);
   guardaT = setTimeout(() => progettoSalva({
-    v: 1, nome: S.nome, clips: S.clips, marcatori: S.marcatori, sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t,
+    v: 1, rate: S.rate, nome: S.nome, clips: S.clips, marcatori: S.marcatori, sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t,
   }), 500);
 }
 
@@ -451,7 +452,7 @@ $('#m-nuovo').onclick = async (e) => {
   e.preventDefault();
   if (!confirm('Cancellare tutto il progetto e i file audio salvati su questo telefono?')) return;
   ferma(); await tuttoSvuota();
-  Object.assign(S, { clips: [], marcatori: [], sorgenti: {}, sel: null, t: 0 });
+  Object.assign(S, { clips: [], marcatori: [], sorgenti: {}, sel: null, t: 0, rate: 0 });
   buffers.clear(); picchi.clear(); storia.svuota();
   dMenu.close(); aggiorna(); toast('Progetto azzerato.');
 };
@@ -463,6 +464,17 @@ $('#file').addEventListener('change', async (e) => {
   if (files.length) await importa(files);
 });
 
+/** Apre un file; il progetto ha una sola frequenza (quella del primo file): se un altro file è diverso, lo ricampiona. */
+async function caricaBuffer(ab, nome) {
+  let buf = await decodificaFile(ab);
+  if (!S.rate) S.rate = buf.sampleRate;
+  else if (buf.sampleRate !== S.rate) {
+    if (nome) toast(`«${nome}» è a ${buf.sampleRate} Hz e il progetto a ${S.rate} Hz: viene ricampionato.`, 6000);
+    buf = await ricampiona(buf, S.rate);
+  }
+  return buf;
+}
+
 async function importa(files) {
   ferma();
   let n = 0;
@@ -471,7 +483,7 @@ async function importa(files) {
     attesa(`Carico ${++n} di ${files.length}: ${f.name}`);
     await respira();
     try {
-      const buf = await decodifica(await f.arrayBuffer());
+      const buf = await caricaBuffer(await f.arrayBuffer(), f.name);
       const id = 's' + M.nuovoId();
       await audioSalva(id, f);
       buffers.set(id, buf); picchi.set(id, calcolaPicchi(buf));
@@ -492,14 +504,13 @@ async function importa(files) {
 const dEsp = doc('#d-esporta');
 const canaliOut = () => (Object.values(S.sorgenti).some((s) => s.canali > 1) ? 2 : 1);
 function stimaEsporta() {
-  const bit = +$('#e-bit').value, rate = +$('#e-rate').value;
+  const bit = +$('#e-bit').value, rate = S.rate;
   const mb = totale() * rate * canaliOut() * (bit / 8) / 1048576;
-  $('#e-stima').textContent = `Durata ${tempo(totale(), 0)} · circa ${mb.toFixed(0)} MB${mb > 600 ? ' — è molto pesante per un telefono: prova 16 bit o esporta a pezzi.' : '.'}${$('#e-tipo').value === 'zip' ? ' Nello zip trovi anche posizioni.txt con l’inizio di ogni clip.' : ''}`;
+  $('#e-stima').textContent = `Durata ${tempo(totale(), 0)} · ${S.rate} Hz come l’originale · circa ${mb.toFixed(0)} MB${mb > 600 ? ' — è molto pesante per un telefono: prova 16 bit o esporta a pezzi.' : '.'}${$('#e-tipo').value === 'zip' ? ' Nello zip trovi anche posizioni.txt con l’inizio di ogni clip.' : ''}`;
 }
-for (const id of ['#e-bit', '#e-rate', '#e-tipo']) $(id).addEventListener('change', stimaEsporta);
+for (const id of ['#e-bit', '#e-tipo']) $(id).addEventListener('change', stimaEsporta);
 $('#esporta').onclick = () => {
   if (!$('#e-nome').value) $('#e-nome').value = S.nome;
-  $('#e-rate').value = String(contesto().sampleRate === 44100 ? 44100 : 48000);
   stimaEsporta(); apri(dEsp);
 };
 const nomeSicuro = (s) => (s || 'audio').replace(/[^\w\- àèéìòù]+/gi, '').trim().replace(/\s+/g, '_') || 'audio';
@@ -507,11 +518,11 @@ const nomeSicuro = (s) => (s || 'audio').replace(/[^\w\- àèéìòù]+/gi, '').
 dEsp.addEventListener('close', async () => {
   if (dEsp.returnValue !== 'ok') return;
   const nome = nomeSicuro($('#e-nome').value); S.nome = nome; guardia();
-  const bit = +$('#e-bit').value, rate = +$('#e-rate').value, canali = canaliOut();
+  const bit = +$('#e-bit').value, rate = S.rate, canali = canaliOut();
   try {
     attesa('Calcolo il montaggio…'); await respira();
     if ($('#e-tipo').value === 'wav') {
-      const buf = await renderizza(S.clips, buffers, { rate, canali });
+      const buf = renderizzaDiretto(S.clips, buffers, { rate, canali });
       attesa('Creo il file WAV…'); await respira();
       await consegna(codificaWav(buf, bit), nome + '.wav');
     } else {
@@ -520,7 +531,7 @@ dEsp.addEventListener('close', async () => {
       for (let i = 0; i < ord.length; i++) {
         const c = ord[i];
         attesa(`Clip ${i + 1} di ${ord.length}…`); await respira();
-        const buf = await renderizza(S.clips, buffers, { da: c.start, a: M.fine(c), rate, canali, solo: new Set([c.id]) });
+        const buf = renderizzaDiretto(S.clips, buffers, { da: c.start, a: M.fine(c), rate, canali, solo: new Set([c.id]) });
         const nf = `${pad(i + 1)}_${nomeSicuro(c.nome)}.wav`;
         files.push({ name: nf, data: new Uint8Array(await codificaWav(buf, bit).arrayBuffer()) });
         righe.push(`${nf}  →  inizio ${tempo(c.start)}  ·  durata ${tempo(c.dur)}`);
@@ -585,10 +596,11 @@ async function ripristina() {
   if (!p || !p.clips?.length) return;
   attesa('Riapro il tuo montaggio…');
   try {
+    S.rate = p.rate || 0;
     for (const id of Object.keys(p.sorgenti || {})) {
       const blob = await audioLeggi(id);
       if (!blob) continue;
-      const buf = await decodifica(await blob.arrayBuffer());
+      const buf = await caricaBuffer(await blob.arrayBuffer());
       buffers.set(id, buf); picchi.set(id, calcolaPicchi(buf));
     }
     const ok = (c) => buffers.has(c.src);

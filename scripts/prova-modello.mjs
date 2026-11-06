@@ -10,9 +10,11 @@ assert.equal(stato.clips.length, 2);
 assert.equal(M.trova(stato.clips, dx).off, 4);
 assert.equal(M.taglia(stato, 4.01), null, 'troppo vicino al taglio');
 // taglio continuo: nessun declick sul punto di taglio
-const f = M.fadeEffettivi(stato.clips);
+const dur = () => 10; // il file sorgente dura 10 s
+const f = M.fadeEffettivi(stato.clips, dur);
 assert.equal(f.get('a').fo, 0); assert.equal(f.get(dx).fi, 0);
-assert.equal(f.get('a').fi, M.DECLICK); assert.equal(f.get(dx).fo, M.DECLICK);
+// inizio e fine naturali del file: nessuna dissolvenza, l'audio esce identico
+assert.equal(f.get('a').fi, 0); assert.equal(f.get(dx).fo, 0);
 
 // elimina con ripple: la clip a sinistra resta, il buco si chiude
 M.taglia(stato, 7);
@@ -22,8 +24,9 @@ assert.equal(stato.clips.length, 2);
 assert.ok(Math.abs(stato.clips[1].start - 4) < 1e-9, 'la clip dopo scorre a sinistra');
 assert.ok(Math.abs(M.durataTotale(stato.clips) - 7) < 1e-9);
 // ora il taglio non è più continuo: declick sul punto
-const f2 = M.fadeEffettivi(stato.clips);
+const f2 = M.fadeEffettivi(stato.clips, dur);
 assert.equal(f2.get(c0.id).fo, M.DECLICK);
+assert.equal(f2.get(c0.id).fi, 0);
 
 // crossfade
 const r = M.crossfade(stato, c2.id, 0.08, true);

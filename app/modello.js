@@ -37,14 +37,20 @@ export function normalizzaFade(c) {
 /** Due clip sono «continue» se sono attaccate sia sulla timeline sia dentro lo stesso file: nessun taglio udibile. */
 const continue_ = (a, b) => a.src === b.src && Math.abs(fine(a) - b.start) < EPS && Math.abs(a.off + a.dur - b.off) < EPS;
 
-/** Dissolvenze effettive di ogni clip (quelle scelte + il micro-declick dove serve). Ritorna Map id → {fi, fo}. */
-export function fadeEffettivi(clips) {
+/**
+ * Dissolvenze effettive di ogni clip (quelle scelte + il micro-declick). Ritorna Map id → {fi, fo}.
+ * Il micro-declick c'è SOLO su un bordo che hai tagliato tu (dentro il file) e che non è un taglio continuo:
+ * l'inizio e la fine naturali di un file restano intatti, così senza modifiche l'audio esce identico.
+ * durSorgente(src) = durata del file in secondi (senza, ogni bordo si considera tagliato).
+ */
+export function fadeEffettivi(clips, durSorgente = () => Infinity) {
   const m = new Map();
   for (const c of clips) {
     const sx = clips.some((x) => x !== c && continue_(x, c));
     const dx = clips.some((x) => x !== c && continue_(c, x));
-    const fi = Math.max(c.fadeIn || 0, sx ? 0 : DECLICK);
-    const fo = Math.max(c.fadeOut || 0, dx ? 0 : DECLICK);
+    const taglioSx = c.off > EPS, taglioDx = c.off + c.dur < durSorgente(c.src) - EPS;
+    const fi = Math.max(c.fadeIn || 0, !sx && taglioSx ? DECLICK : 0);
+    const fo = Math.max(c.fadeOut || 0, !dx && taglioDx ? DECLICK : 0);
     const tot = fi + fo, lim = Math.max(0, c.dur - 0.001);
     const k = tot > lim && tot > 0 ? lim / tot : 1;
     m.set(c.id, { fi: fi * k, fo: fo * k });
