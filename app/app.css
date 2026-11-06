@@ -1,0 +1,78 @@
+/* Audio Editor ad hoc - impaginazione. Colori e font vengono SOLO da assets/brand.css. */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--ui-sfondo);color:var(--ui-testo);font-family:var(--font-ui);overflow:hidden;
+  padding-top:env(safe-area-inset-top);user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:var(--viola)}
+.top h1{margin:0;font:400 19px/1 var(--font-titoli);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.top h1 span{color:var(--arancione)}
+.top-az{display:flex;gap:6px;flex-shrink:0}
+.btn{border:1.5px solid var(--lilla);background:transparent;color:var(--ui-testo);border-radius:10px;padding:8px 10px;font:400 14px/1 var(--font-titoli);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.btn.pieno{background:var(--arancione);border-color:var(--arancione);color:var(--viola)}
+.btn.icona{padding:8px 10px;font-size:18px}
+.btn.blocco{display:block;width:100%;margin:8px 0}
+.btn.pericolo{border-color:var(--ui-pericolo);color:var(--ui-pericolo)}
+.btn:active{transform:scale(.97)}
+
+.banner{background:var(--giallo);color:var(--viola);padding:8px 12px;font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.banner[hidden]{display:none}
+.banner button{background:var(--viola);color:var(--bianco);border:0;border-radius:8px;padding:6px 10px}
+
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+.info{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;gap:8px}
+.tempo{white-space:nowrap}
+.tempo b{font:400 28px/1 var(--font-titoli);letter-spacing:.04em}
+.tempo small{margin-left:6px;color:var(--ui-tenue);font-size:13px}
+.info-az{display:flex;gap:6px}
+.mini{width:40px;height:36px;border-radius:9px;border:1.5px solid var(--ui-linea);background:var(--ui-pannello);font:400 20px/1 var(--font-titoli);display:grid;place-items:center;padding:0}
+.mini:active{background:var(--ui-linea)}
+.mini.magnete{color:var(--ui-tenue)}
+.mini.magnete.on{background:var(--arancione);border-color:var(--arancione);color:var(--viola)}
+.mini svg{width:22px;height:22px}
+
+#area{position:relative;flex:0 0 auto;height:min(380px,46vh);background:var(--ui-sfondo);border-block:1px solid var(--ui-linea)}
+#tl{display:block;width:100%;height:100%;touch-action:none}
+#vuoto{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:var(--ui-tenue);pointer-events:none;font-family:var(--font-testi);font-size:14px;line-height:1.5}
+#vuoto p{margin:0}
+#vuoto[hidden]{display:none}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 12px;min-height:46px;align-items:center}
+.chip{flex:0 0 auto;display:flex;align-items:center;border-radius:99px;background:var(--ui-pannello);border:1.5px solid var(--giallo);overflow:hidden}
+.chip button{background:none;border:0;color:var(--giallo);padding:6px 10px;font-size:14px}
+.chip button + button{padding-left:4px;color:var(--ui-tenue)}
+.chips .vuoto{color:var(--ui-tenue);font-size:13px;font-family:var(--font-testi)}
+
+.barra{margin-top:auto;background:var(--ui-pannello);border-top:1px solid var(--ui-linea);padding:10px 10px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.riga{display:flex;gap:8px;justify-content:space-between}
+.tool{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;border-radius:12px;border:1.5px solid var(--ui-linea);background:var(--ui-sfondo);font:400 13px/1 var(--font-titoli);letter-spacing:.05em;text-transform:uppercase;min-width:0}
+.tool svg{width:26px;height:26px}
+.tool:active{background:var(--ui-linea)}
+.tool:disabled,.tr:disabled{opacity:.35}
+.tool.attivo{border-color:var(--arancione);color:var(--arancione)}
+.tr{flex:1;height:54px;border-radius:14px;border:1.5px solid var(--ui-linea);background:var(--ui-sfondo);display:grid;place-items:center;padding:0}
+.tr svg{width:26px;height:26px}
+.tr.gr{flex:1.6;background:var(--arancione);border-color:var(--arancione);color:var(--viola)}
+.tr:active{filter:brightness(1.15)}
+svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg .pieno{fill:currentColor;stroke:none}
+
+dialog{border:1.5px solid var(--lilla);border-radius:16px;background:var(--ui-pannello);color:var(--ui-testo);width:min(92vw,420px);padding:18px;font-family:var(--font-ui)}
+dialog::backdrop{background:rgba(10,5,30,.7)}
+dialog h2{margin:0 0 10px;font:400 24px/1 var(--font-titoli);letter-spacing:.05em;text-transform:uppercase;color:var(--arancione)}
+dialog label{display:block;margin:12px 0;font-size:14px;color:var(--ui-tenue)}
+dialog label b{color:var(--ui-testo);float:right}
+dialog input[type=text],dialog select{display:block;width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1.5px solid var(--ui-linea);background:var(--ui-sfondo);color:var(--ui-testo);font-size:16px}
+dialog input[type=range]{display:block;width:100%;margin-top:8px;accent-color:var(--arancione)}
+.due{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pulsanti{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.nota{margin:8px 0;color:var(--ui-tenue);font:400 13px/1.5 var(--font-testi)}
+
+#toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translate(-50%,20px);max-width:88vw;background:var(--bianco);color:var(--viola);padding:10px 14px;border-radius:12px;font:400 14px/1.4 var(--font-testi);opacity:0;pointer-events:none;transition:.2s;z-index:50;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#attesa{position:fixed;inset:0;background:rgba(10,5,30,.8);display:grid;place-items:center;z-index:60;text-align:center}
+#attesa[hidden]{display:none}
+.giro{display:block;width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:4px solid var(--ui-linea);border-top-color:var(--arancione);animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+@media (min-width:700px){#area{height:min(380px,50vh)}.barra{max-width:760px;width:100%;margin-inline:auto;border-radius:16px 16px 0 0}}

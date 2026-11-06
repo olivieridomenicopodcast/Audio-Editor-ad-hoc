@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Audio Editor ad hoc</title>
+<meta name="description" content="Editor audio essenziale: taglio, magnete, crossfade e fade, per montare al volo prima di Pro Tools.">
+<meta name="theme-color" content="#1B0F4A">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Audio Editor">
+<link rel="stylesheet" href="assets/brand.css">
+<link rel="stylesheet" href="app/app.css">
+</head>
+<body>
+<header class="top">
+  <h1>Audio Editor <span>ad hoc</span></h1>
+  <div class="top-az">
+    <button id="importa" class="btn" type="button">+ Importa</button>
+    <button id="esporta" class="btn pieno" type="button">Esporta</button>
+    <button id="menu" class="btn icona" type="button" aria-label="Altro">⋯</button>
+  </div>
+</header>
+<div id="aggiorna" class="banner" hidden></div>
+
+<main>
+  <div class="info">
+    <div class="tempo"><b id="t-corrente">00:00.00</b><small id="t-totale">/ 00:00</small></div>
+    <div class="info-az">
+      <button id="piu-meno" class="mini" type="button" aria-label="Indietro di un passo">‹</button>
+      <button id="piu-piu" class="mini" type="button" aria-label="Avanti di un passo">›</button>
+      <button id="zoom-meno" class="mini" type="button" aria-label="Zoom indietro">−</button>
+      <button id="zoom-piu" class="mini" type="button" aria-label="Zoom avanti">+</button>
+      <button id="magnete" class="mini magnete on" type="button" aria-pressed="true" aria-label="Magnete (attacca a sinistra)"></button>
+    </div>
+  </div>
+  <div id="area">
+    <canvas id="tl"></canvas>
+    <div id="vuoto"><p>Nessun audio.</p><p>Tocca <b>+ Importa</b> e scegli le registrazioni.</p></div>
+  </div>
+  <div id="chips" class="chips" aria-label="Marcatori"></div>
+</main>
+
+<footer class="barra">
+  <div class="riga strumenti">
+    <button id="b-taglia" class="tool" type="button"></button>
+    <button id="b-elimina" class="tool" type="button"></button>
+    <button id="b-cross" class="tool" type="button"></button>
+    <button id="b-marc" class="tool" type="button"></button>
+    <button id="b-pause" class="tool" type="button"></button>
+  </div>
+  <div class="riga trasporto">
+    <button id="b-inizio" class="tr" type="button" aria-label="Torna all'inizio"></button>
+    <button id="b-annulla" class="tr" type="button" aria-label="Annulla"></button>
+    <button id="b-play" class="tr gr" type="button" aria-label="Riproduci"></button>
+    <button id="b-ripristina" class="tr" type="button" aria-label="Ripristina"></button>
+    <button id="b-fine" class="tr" type="button" aria-label="Vai alla fine"></button>
+  </div>
+</footer>
+
+<input id="file" type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.flac,.ogg,.aif,.aiff" multiple hidden>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="attesa" hidden><div><span class="giro"></span><p id="attesa-testo">Un attimo…</p></div></div>
+
+<dialog id="d-esporta">
+  <form method="dialog">
+    <h2>Esporta</h2>
+    <label>Nome del file<input id="e-nome" type="text" autocomplete="off"></label>
+    <label>Cosa esportare
+      <select id="e-tipo">
+        <option value="wav">Un solo WAV (montaggio finito)</option>
+        <option value="zip">Clip separate in uno zip (per Pro Tools)</option>
+      </select>
+    </label>
+    <div class="due">
+      <label>Qualità
+        <select id="e-bit"><option value="24">24 bit</option><option value="16">16 bit</option><option value="32">32 bit float</option></select>
+      </label>
+      <label>Campionamento
+        <select id="e-rate"><option value="48000">48 kHz</option><option value="44100">44,1 kHz</option></select>
+      </label>
+    </div>
+    <p id="e-stima" class="nota"></p>
+    <div class="pulsanti"><button value="annulla" class="btn">Annulla</button><button id="e-vai" value="ok" class="btn pieno">Esporta</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-pause">
+  <form method="dialog">
+    <h2>Accorcia le pause</h2>
+    <p class="nota">Cerca i silenzi lunghi in tutte le clip e li accorcia, chiudendo i buchi. Puoi annullare.</p>
+    <label>Silenzio sotto <b id="p-soglia-v"></b><input id="p-soglia" type="range" min="-60" max="-25" step="1" value="-45"></label>
+    <label>Più lungo di <b id="p-min-v"></b><input id="p-min" type="range" min="0.3" max="3" step="0.1" value="0.8"></label>
+    <label>Lascia una pausa di <b id="p-man-v"></b><input id="p-man" type="range" min="0.1" max="1" step="0.05" value="0.4"></label>
+    <div class="pulsanti"><button value="annulla" class="btn">Annulla</button><button id="p-vai" value="ok" class="btn pieno">Applica</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-cross">
+  <form method="dialog">
+    <h2>Crossfade</h2>
+    <p class="nota">La clip selezionata si sovrappone alla precedente: l'una sfuma mentre l'altra entra.</p>
+    <label>Durata <b id="x-ms-v"></b><input id="x-ms" type="range" min="10" max="500" step="10" value="80"></label>
+    <div class="pulsanti"><button value="annulla" class="btn">Annulla</button><button id="x-vai" value="ok" class="btn pieno">Applica</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-menu">
+  <form method="dialog">
+    <h2>Altro</h2>
+    <button id="m-aggiorna" value="x" class="btn blocco">Cerca aggiornamenti</button>
+    <button id="m-nuovo" value="x" class="btn blocco pericolo">Nuovo progetto (cancella tutto)</button>
+    <p class="nota" id="m-info"></p>
+    <div class="pulsanti"><button value="chiudi" class="btn">Chiudi</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="app/app.js"></script>
+</body>
+</html>

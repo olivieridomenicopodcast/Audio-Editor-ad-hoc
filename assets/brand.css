@@ -1,0 +1,23 @@
+/* Audio Editor ad hoc - UNICA fonte di colori e font. Non scrivere colori o font altrove.
+   Stessa identità di DomePodcast Studio (viola, arancione, giallo-arancio, lilla). */
+@font-face{font-family:"Staatliches";src:url("../fonts/Staatliches-Regular.ttf") format("truetype");font-weight:400;font-display:swap}
+@font-face{font-family:"Libre Baskerville";src:url("../fonts/LibreBaskerville-var.ttf") format("truetype");font-weight:400 700;font-display:swap}
+:root{
+  /* Palette del brand */
+  --viola:#2E1976;
+  --arancione:#EE8F4D;
+  --giallo:#F4B162;
+  --lilla:#A98BEE;
+  --bianco:#FFFFFF;
+  /* Interfaccia dell'editor (toni derivati dal viola) */
+  --ui-sfondo:#1B0F4A;
+  --ui-pannello:#24155F;
+  --ui-linea:#3D2A8F;
+  --ui-testo:#F3EEFF;
+  --ui-tenue:#A99BD6;
+  --ui-pericolo:#FF7A59;
+  /* Font */
+  --font-titoli:"Staatliches","Bebas Neue",Impact,sans-serif;
+  --font-testi:"Libre Baskerville",Georgia,"Times New Roman",serif;
+  --font-ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}

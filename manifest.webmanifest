@@ -1,0 +1,17 @@
+{
+  "name": "Audio Editor ad hoc",
+  "short_name": "Audio Editor",
+  "description": "Editor audio essenziale per montare al volo: taglio, magnete, crossfade e fade.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1B0F4A",
+  "theme_color": "#2E1976",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
