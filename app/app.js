@@ -167,9 +167,9 @@ function disegnaClip(c, sel) {
   }
   if (c.fadeOut > 0) {
     const fw = c.fadeOut * S.pps;
-    g.beginPath(); g.moveTo(x1, y0); g.lineTo(x1, y0 + h);
-    for (let k = 16; k >= 0; k--) g.lineTo(x1 - fw * k / 16, y0 + h * (1 - curva(k / 16)));
-    g.closePath(); g.fill();
+    g.beginPath();
+    for (let k = 16; k >= 0; k--) g[k === 16 ? 'moveTo' : 'lineTo'](x1 - fw * k / 16, y0 + h * (1 - curva(k / 16)));
+    g.lineTo(x1, y0); g.closePath(); g.fill();
     g.beginPath(); for (let k = 0; k <= 16; k++) g[k ? 'lineTo' : 'moveTo'](x1 - fw * k / 16, y0 + h * (1 - curva(k / 16))); g.stroke();
   }
   // nome
