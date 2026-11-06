@@ -2,13 +2,14 @@
 import { BUILD } from './build.js';
 import * as M from './modello.js';
 import { contesto, decodificaFile, ricampiona, calcolaPicchi, programma, renderizzaDiretto, codificaWav } from './audio.js';
-import { progettoSalva, progettoLeggi, audioSalva, audioLeggi, tuttoSvuota } from './idb.js';
+import { metaLeggi, metaSalva, metaElimina, progettiTutti, progettoLeggi, progettoSalva, progettoElimina, audioSalva, audioLeggi, audioElimina, audioChiavi, tuttoSvuota } from './idb.js';
+import { leggiConfig, salvaConfig, controllaConfig, spiegaErrore, provaToken, leggiRemoti, pushProgetti } from './github.js';
 import { zipStore } from './zip.js';
 
 const $ = (s) => document.querySelector(s);
 
 /* ---------- stato ---------- */
-const S = { clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0 };
+const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0 };
 if (location.search.includes('debug')) window.__S = S; // solo per le prove automatiche
 const buffers = new Map();   // id sorgente → AudioBuffer
 const picchi = new Map();    // id sorgente → picchi per la forma d'onda
@@ -60,13 +61,24 @@ const totale = () => M.durataTotale(S.clips);
 const clipSel = () => (S.sel ? M.trova(S.clips, S.sel) : null);
 
 /* ---------- salvataggio sul telefono ---------- */
-let guardaT;
-function guardia() {
+const nuovoIdProg = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+let guardaT, ultimoSnap = '';
+const snapshot = () => JSON.stringify([S.clips, S.marcatori, S.nome]);
+const registro = () => ({
+  v: 1, id: S.id, nome: S.nome, aggiornato: S.aggiornato, rate: S.rate, clips: S.clips, marcatori: S.marcatori,
+  sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t,
+});
+function guardia() { clearTimeout(guardaT); guardaT = setTimeout(salvaOra, 500); }
+/** Salva subito il progetto aperto. «aggiornato» cambia solo se sono cambiati clip, marcatori o nome (non per un semplice scorrimento). */
+async function salvaOra() {
   clearTimeout(guardaT);
-  guardaT = setTimeout(() => progettoSalva({
-    v: 1, rate: S.rate, nome: S.nome, clips: S.clips, marcatori: S.marcatori, sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t,
-  }), 500);
+  if (!S.id) return;
+  const snap = snapshot();
+  if (snap !== ultimoSnap) { ultimoSnap = snap; S.aggiornato = Date.now(); }
+  await progettoSalva(registro());
 }
+addEventListener('visibilitychange', () => { if (document.hidden) salvaOra(); });
+addEventListener('pagehide', () => { salvaOra(); });
 
 /** Esegue una modifica: ferma la riproduzione, salva lo stato per «annulla», poi aggiorna tutto. */
 function modifica(fn) {
@@ -139,7 +151,8 @@ function disegnaClip(c, sel) {
   const x0 = xDi(c.start), x1 = xDi(M.fine(c)), h = alt(), y0 = TOP, w = x1 - x0;
   if (x1 < -2 || x0 > W + 2) return;
   g.save();
-  percorsoClip(x0, y0, w, h, 10); g.fillStyle = C.arancione; g.fill();
+  const manca = !buffers.has(c.src);
+  percorsoClip(x0, y0, w, h, 10); g.fillStyle = manca ? C['ui-linea'] : C.arancione; g.fill();
   g.clip();
   // forma d'onda
   const pk = picchi.get(c.src);
@@ -173,8 +186,14 @@ function disegnaClip(c, sel) {
     g.beginPath(); for (let k = 0; k <= 16; k++) g[k ? 'lineTo' : 'moveTo'](x1 - fw * k / 16, y0 + h * (1 - curva(k / 16))); g.stroke();
   }
   // nome
-  g.fillStyle = C.viola; g.font = '15px Staatliches, sans-serif'; g.textBaseline = 'top';
+  g.fillStyle = manca ? C['ui-testo'] : C.viola; g.font = '15px Staatliches, sans-serif'; g.textBaseline = 'top';
   if (w > 40) g.fillText(c.nome, Math.min(Math.max(x0 + 10, 8), x1 - 30), y0 + 8, Math.max(20, x1 - Math.max(x0 + 10, 8) - 10));
+  if (manca && w > 60) {
+    const a = Math.max(x0, 0), z = Math.min(x1, W);
+    g.fillStyle = C['ui-tenue']; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('file mancante: importalo di nuovo', (a + z) / 2, y0 + h / 2, Math.max(40, z - a - 16));
+    g.textAlign = 'left';
+  }
   g.restore();
   // bordo e maniglie
   percorsoClip(x0, y0, w, h, 10); g.lineWidth = sel ? 3 : 1.5; g.strokeStyle = sel ? C.bianco : C.giallo; g.stroke();
@@ -208,6 +227,7 @@ function disegna() {
 
 /* ---------- interfaccia ---------- */
 function aggiorna() {
+  $('#nome-prog-t').textContent = S.nome;
   $('#t-corrente').textContent = tempo(S.t);
   $('#t-totale').textContent = '/ ' + tempo(totale(), 0);
   $('#vuoto').hidden = S.clips.length > 0;
@@ -444,17 +464,169 @@ dPause.addEventListener('close', () => {
   toast(r.pause ? `${r.pause} pause accorciate: tolti ${r.rimosso.toFixed(1).replace('.', ',')} s` : 'Nessuna pausa abbastanza lunga: prova ad alzare la soglia.');
 });
 
-// Menu
-const dMenu = doc('#d-menu');
-$('#menu').onclick = () => { $('#m-info').textContent = `Audio Editor ad hoc · build ${BUILD}`; apri(dMenu); };
-$('#m-aggiorna').onclick = (e) => { e.preventDefault(); controllaAggiornamenti(true); };
-$('#m-nuovo').onclick = async (e) => {
-  e.preventDefault();
-  if (!confirm('Cancellare tutto il progetto e i file audio salvati su questo telefono?')) return;
+/* ---------- progetti ---------- */
+const dProg = doc('#d-progetti');
+const esc = (t) => String(t).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+const CHIAVE_CANC = 'aeah-canc-v1'; // progetti cancellati qui: al prossimo Push vanno tolti anche dal repo (e il Pull non li riporta)
+const cancellati = () => { try { return JSON.parse(localStorage.getItem(CHIAVE_CANC)) || []; } catch { return []; } };
+const memorizzaCancellati = (ids) => { try { localStorage.setItem(CHIAVE_CANC, JSON.stringify([...new Set(ids)])); } catch { /* niente */ } };
+const mb = (b) => (b ? (b / 1048576).toFixed(b < 10485760 ? 1 : 0).replace('.', ',') + ' MB' : '0 MB');
+const quando = (ms) => (ms ? new Date(ms).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—');
+const byteDi = (rec) => Object.values(rec.sorgenti || {}).reduce((t, x) => t + (x.bytes || 0), 0);
+
+async function renderProgetti() {
+  await salvaOra();
+  const tutti = (await progettiTutti()).sort((a, b) => (b.aggiornato || 0) - (a.aggiornato || 0));
+  $('#lista-progetti').innerHTML = tutti.map((r) => `<div class="prog${r.id === S.id ? ' aperto' : ''}">
+    <b>${esc(r.nome)}${r.id === S.id ? '<span class="tag">aperto</span>' : ''}</b>
+    <small>${tempo(M.durataTotale(r.clips || []), 0)} · ${(r.clips || []).length} clip · ${mb(byteDi(r))} di audio · modificato ${quando(r.aggiornato)}</small>
+    <div class="az">${r.id === S.id ? '' : `<button class="btn" type="button" data-az="apri" data-id="${esc(r.id)}">Apri</button>`}
+      <button class="btn" type="button" data-az="rinomina" data-id="${esc(r.id)}">Rinomina</button>
+      <button class="btn" type="button" data-az="duplica" data-id="${esc(r.id)}">Duplica</button>
+      <button class="btn pericolo" type="button" data-az="elimina" data-id="${esc(r.id)}">Elimina</button></div></div>`).join('') || '<p class="nota">Nessun progetto.</p>';
+  const unici = new Map(); for (const r of tutti) for (const [k, x] of Object.entries(r.sorgenti || {})) unici.set(k, x.bytes || 0);
+  $('#pr-spazio').textContent = `File audio salvati su questo telefono: ${mb([...unici.values()].reduce((a, b) => a + b, 0))} (i file originali restano dove sono: qui ne tengo una copia per riaprire i progetti).`;
+}
+$('#nome-prog').onclick = async () => { ferma(); await renderProgetti(); apri(dProg); };
+$('#lista-progetti').addEventListener('click', async (e) => {
+  const b = e.target.closest('button[data-az]'); if (!b) return;
+  const id = b.dataset.id, az = b.dataset.az;
+  if (az === 'apri') { await salvaOra(); const rec = await progettoLeggi(id); dProg.close(); if (rec) await apriRegistro(rec); }
+  else if (az === 'duplica') {
+    await salvaOra(); const rec = await progettoLeggi(id);
+    if (rec) await progettoSalva({ ...rec, id: nuovoIdProg(), nome: `${rec.nome} (copia)`.slice(0, 60), aggiornato: Date.now() });
+    await renderProgetti();
+  } else if (az === 'rinomina') {
+    const rec = await progettoLeggi(id); if (!rec) return;
+    const n = prompt('Nome del progetto:', rec.nome);
+    if (n && n.trim()) {
+      if (id === S.id) { S.nome = n.trim().slice(0, 60); await salvaOra(); aggiorna(); }
+      else { rec.nome = n.trim().slice(0, 60); rec.aggiornato = Date.now(); await progettoSalva(rec); }
+      await renderProgetti();
+    }
+  } else if (az === 'elimina') {
+    const rec = await progettoLeggi(id); if (!rec) return;
+    if (!confirm(`Eliminare «${rec.nome}»? I file audio usati solo da questo progetto verranno tolti dal telefono.`)) return;
+    await eliminaProgetto(id); await renderProgetti();
+  }
+});
+$('#pr-nuovo').onclick = async () => {
+  const n = prompt('Nome del nuovo progetto:', `Montaggio ${(await progettiTutti()).length + 1}`);
+  if (n === null) return;
+  dProg.close(); await creaProgetto(n.trim().slice(0, 60) || 'Montaggio');
+};
+
+async function eliminaProgetto(id) {
+  await progettoElimina(id); memorizzaCancellati([...cancellati(), id]);
+  if (id === S.id) {
+    S.id = null;
+    const resto = (await progettiTutti()).sort((a, b) => (b.aggiornato || 0) - (a.aggiornato || 0))[0];
+    if (resto) await apriRegistro(resto); else await creaProgetto('Montaggio');
+  }
+  await liberaFile();
+}
+
+/** Toglie dal telefono i file audio che nessun progetto usa più. Ritorna quanti ne ha tolti. */
+async function liberaFile() {
+  await salvaOra();
+  const usati = new Set();
+  for (const r of await progettiTutti()) for (const k of Object.keys(r.sorgenti || {})) usati.add(k);
+  let n = 0;
+  for (const k of await audioChiavi()) if (!usati.has(k)) { await audioElimina(k); buffers.delete(k); picchi.delete(k); n++; }
+  return n;
+}
+
+/* ---------- impostazioni e sincronizzazione ---------- */
+const dImpo = doc('#d-impo');
+const statoG = (t) => { $('#g-stato').textContent = t; };
+$('#menu').onclick = () => {
+  const c = leggiConfig();
+  $('#g-token').value = ''; $('#g-token').placeholder = c.token ? '•••••••• salvato (scrivi per cambiarlo)' : 'incolla qui il token';
+  $('#g-repo').value = c.repo; $('#g-cartella').value = c.cartella; statoG('');
+  $('#m-info').textContent = `Audio Editor ad hoc · build ${BUILD}`;
+  apri(dImpo);
+};
+const leggiCampi = () => {
+  const c = leggiConfig(), t = $('#g-token').value.trim();
+  return { ...c, token: t || c.token, repo: $('#g-repo').value.trim(), cartella: $('#g-cartella').value.trim().replace(/^\/+|\/+$/g, '') };
+};
+const campiOk = () => { const c = leggiCampi(), err = controllaConfig(c); if (err) { statoG(err); return null; } salvaConfig(c); $('#g-token').value = ''; return c; };
+
+$('#g-salva').onclick = async () => {
+  const c = campiOk(); if (!c) return;
+  statoG('Controllo il token…');
+  try {
+    const r = await provaToken(c);
+    statoG(r.puoScrivere ? `Tutto a posto: posso leggere e scrivere su ${r.nome}.` : `Il token legge ${r.nome} ma NON può scrivere: serve il permesso «Contents: Read and write».`);
+  } catch (e) { statoG(spiegaErrore(e)); }
+};
+$('#g-rimuovi').onclick = () => {
+  salvaConfig({ ...leggiConfig(), token: '' });
+  $('#g-token').value = ''; $('#g-token').placeholder = 'incolla qui il token'; statoG('Token tolto da questo telefono.');
+};
+$('#g-push').onclick = async () => {
+  const c = campiOk(); if (!c) return;
+  try {
+    await salvaOra();
+    const locali = await progettiTutti(), canc = cancellati();
+    const r = await pushProgetti(c, locali, canc, statoG);
+    memorizzaCancellati([]);
+    const parti = [];
+    if (r.cambiato) parti.push(`Inviati ${r.inviati.length} progetti${r.tolti ? `, tolti dal repo ${r.tolti}` : ''}.`); else if (!r.saltati.length) parti.push('Niente da inviare: il repo è già aggiornato.');
+    if (r.saltati.length) parti.push(`Non inviati perché sul repo sono più recenti: ${r.saltati.join(', ')}. Fai prima Pull.`);
+    statoG(parti.join(' '));
+  } catch (e) { statoG(spiegaErrore(e)); }
+};
+$('#g-pull').onclick = async () => {
+  const c = campiOk(); if (!c) return;
+  try {
+    await salvaOra();
+    const remoti = await leggiRemoti(c, statoG);
+    const locali = new Map((await progettiTutti()).map((r) => [r.id, r])), canc = new Set(cancellati());
+    let nuovi = 0, aggiornati = 0, rifiutati = 0, riapri = false; const piuLocali = [];
+    for (const { id, rec } of remoti) {
+      const v = validaRegistro(rec);
+      if (!v || v.id !== id) { rifiutati++; continue; }
+      if (canc.has(v.id)) continue;
+      const l = locali.get(v.id);
+      if (!l) { await progettoSalva(v); nuovi++; }
+      else if (v.aggiornato > (l.aggiornato || 0)) { await progettoSalva(v); aggiornati++; if (v.id === S.id) riapri = true; }
+      else if (v.aggiornato < (l.aggiornato || 0)) piuLocali.push(l.nome);
+    }
+    if (riapri) { const rec = await progettoLeggi(S.id); if (rec) await apriRegistro(rec); }
+    const parti = [`Pull fatto: ${nuovi} nuovi, ${aggiornati} aggiornati.`];
+    if (piuLocali.length) parti.push(`Più recenti qui (non toccati): ${piuLocali.join(', ')}.`);
+    if (rifiutati) parti.push(`${rifiutati} file del repo non validi, ignorati.`);
+    if (nuovi + aggiornati) parti.push('I file audio non viaggiano: apri il progetto e importa di nuovo i file con lo stesso nome per ricollegarli.');
+    statoG(parti.join(' '));
+  } catch (e) { statoG(spiegaErrore(e)); }
+};
+/** Rimette in ordine un progetto arrivato dal repo: tiene solo campi e valori sensati. */
+function validaRegistro(r) {
+  if (!r || typeof r !== 'object' || !/^p[a-z0-9]{3,40}$/.test(String(r.id))) return null;
+  const num = (x, d = 0) => (Number.isFinite(+x) ? +x : d);
+  const sorgenti = {};
+  for (const [k, x] of Object.entries(r.sorgenti || {})) {
+    if (/^s[\w-]{3,60}$/.test(k) && x && typeof x === 'object') sorgenti[k] = { nome: String(x.nome || '').slice(0, 120), durata: Math.max(0, num(x.durata)), canali: clamp(Math.round(num(x.canali, 1)), 1, 8), bytes: Math.max(0, num(x.bytes)) };
+  }
+  const clips = (Array.isArray(r.clips) ? r.clips : []).map((c) => ({
+    id: String(c?.id || '').slice(0, 40), src: String(c?.src), nome: String(c?.nome || '').slice(0, 120),
+    start: Math.max(0, num(c?.start)), off: Math.max(0, num(c?.off)), dur: num(c?.dur), fadeIn: Math.max(0, num(c?.fadeIn)), fadeOut: Math.max(0, num(c?.fadeOut)),
+  })).filter((c) => c.id && sorgenti[c.src] && c.dur >= M.MIN_DUR);
+  return {
+    v: 1, id: r.id, nome: String(r.nome || 'Montaggio').slice(0, 60), aggiornato: Math.max(0, num(r.aggiornato)), rate: Math.max(0, num(r.rate)),
+    clips, marcatori: (Array.isArray(r.marcatori) ? r.marcatori : []).map(Number).filter(Number.isFinite), sorgenti,
+    magnete: r.magnete !== false, pps: clamp(num(r.pps, 60), 4, 1500), t: Math.max(0, num(r.t)),
+  };
+}
+
+$('#m-aggiorna').onclick = () => controllaAggiornamenti(true);
+$('#m-libera').onclick = async () => { const n = await liberaFile(); toast(n ? `Tolti ${n} file audio che nessun progetto usava.` : 'Non c’è niente da liberare.'); };
+$('#m-cancella').onclick = async () => {
+  if (!confirm('Cancellare TUTTI i progetti e i file audio salvati su questo telefono? Non si può annullare.')) return;
   ferma(); await tuttoSvuota();
-  Object.assign(S, { clips: [], marcatori: [], sorgenti: {}, sel: null, t: 0, rate: 0 });
-  buffers.clear(); picchi.clear(); storia.svuota();
-  dMenu.close(); aggiorna(); toast('Progetto azzerato.');
+  buffers.clear(); picchi.clear(); S.id = null;
+  dImpo.close(); await creaProgetto('Montaggio'); toast('Tutto cancellato.');
 };
 
 /* ---------- importazione ---------- */
@@ -477,18 +649,28 @@ async function caricaBuffer(ab, nome) {
 
 async function importa(files) {
   ferma();
-  let n = 0;
+  let n = 0, ricollegati = 0;
   storia.salva(S);
   for (const f of files) {
     attesa(`Carico ${++n} di ${files.length}: ${f.name}`);
     await respira();
     try {
       const buf = await caricaBuffer(await f.arrayBuffer(), f.name);
+      const nome = f.name.replace(/\.[^.]+$/, '');
+      // un file con lo stesso nome di uno mancante (progetto ripreso con Pull) lo ricollega, senza aggiungere clip
+      const orfano = Object.entries(S.sorgenti).find(([k, x]) => !buffers.has(k) && x.nome === nome);
+      if (orfano) {
+        const [k, x] = orfano;
+        await audioSalva(k, f);
+        buffers.set(k, buf); picchi.set(k, calcolaPicchi(buf)); x.bytes = f.size;
+        ricollegati++;
+        if (Math.abs(buf.duration - x.durata) > 0.01) toast(`Attenzione: «${f.name}» ha una durata diversa dall'originale, i tagli potrebbero non combaciare.`, 7000);
+        continue;
+      }
       const id = 's' + M.nuovoId();
       await audioSalva(id, f);
       buffers.set(id, buf); picchi.set(id, calcolaPicchi(buf));
-      const nome = f.name.replace(/\.[^.]+$/, '');
-      S.sorgenti[id] = { nome, durata: buf.duration, canali: buf.numberOfChannels };
+      S.sorgenti[id] = { nome, durata: buf.duration, canali: buf.numberOfChannels, bytes: f.size };
       S.clips.push({ id: M.nuovoId(), src: id, nome, start: totale(), off: 0, dur: buf.duration, fadeIn: 0, fadeOut: 0 });
     } catch (err) {
       console.error(err);
@@ -498,6 +680,7 @@ async function importa(files) {
   attesa(null);
   storia.scartaSeUguale(S);
   fineModifica();
+  if (ricollegati) toast(`Ricollegati ${ricollegati} file audio.`);
 }
 
 /* ---------- esportazione ---------- */
@@ -510,14 +693,15 @@ function stimaEsporta() {
 }
 for (const id of ['#e-bit', '#e-tipo']) $(id).addEventListener('change', stimaEsporta);
 $('#esporta').onclick = () => {
-  if (!$('#e-nome').value) $('#e-nome').value = S.nome;
+  if (mancanti().length) { toast('Mancano dei file audio (progetto ripreso con Pull): importali di nuovo con lo stesso nome.', 6000); return; }
+  $('#e-nome').value = S.nome;
   stimaEsporta(); apri(dEsp);
 };
 const nomeSicuro = (s) => (s || 'audio').replace(/[^\w\- àèéìòù]+/gi, '').trim().replace(/\s+/g, '_') || 'audio';
 
 dEsp.addEventListener('close', async () => {
   if (dEsp.returnValue !== 'ok') return;
-  const nome = nomeSicuro($('#e-nome').value); S.nome = nome; guardia();
+  const nome = nomeSicuro($('#e-nome').value);
   const bit = +$('#e-bit').value, rate = S.rate, canali = canaliOut();
   try {
     attesa('Calcolo il montaggio…'); await respira();
@@ -592,34 +776,64 @@ async function controllaAggiornamenti(manuale) {
   } catch { if (manuale) toast('Non riesco a controllare: forse sei offline.'); }
 }
 
-async function ripristina() {
-  const p = await progettoLeggi();
-  if (!p || !p.clips?.length) return;
-  attesa('Riapro il tuo montaggio…');
-  try {
-    S.rate = p.rate || 0;
-    for (const id of Object.keys(p.sorgenti || {})) {
-      const blob = await audioLeggi(id);
-      if (!blob) continue;
-      const buf = await caricaBuffer(await blob.arrayBuffer());
-      buffers.set(id, buf); picchi.set(id, calcolaPicchi(buf));
+/* ---------- aprire, creare e ripristinare i progetti ---------- */
+const mancanti = () => Object.keys(S.sorgenti).filter((k) => !buffers.has(k) && S.clips.some((c) => c.src === k));
+
+/** Apre un progetto: porta in memoria solo l'audio che gli serve e libera quello degli altri. */
+async function apriRegistro(rec) {
+  ferma(); storia.svuota();
+  Object.assign(S, {
+    id: rec.id, nome: rec.nome || 'Montaggio', aggiornato: rec.aggiornato || 0, rate: rec.rate || 0, clips: rec.clips || [],
+    marcatori: rec.marcatori || [], sorgenti: rec.sorgenti || {}, magnete: rec.magnete !== false, pps: rec.pps || 60, t: rec.t || 0, sel: null,
+  });
+  ultimoSnap = snapshot();
+  for (const k of [...buffers.keys()]) if (!S.sorgenti[k]) { buffers.delete(k); picchi.delete(k); }
+  const daCaricare = Object.keys(S.sorgenti).filter((k) => !buffers.has(k));
+  if (daCaricare.length) {
+    attesa(`Apro «${S.nome}»…`); await respira();
+    for (const k of daCaricare) {
+      try {
+        const blob = await audioLeggi(k);
+        if (!blob) continue;
+        if (!S.sorgenti[k].bytes) S.sorgenti[k].bytes = blob.size;
+        const buf = await caricaBuffer(await blob.arrayBuffer());
+        buffers.set(k, buf); picchi.set(k, calcolaPicchi(buf));
+      } catch (e) { console.error(e); }
     }
-    const ok = (c) => buffers.has(c.src);
-    Object.assign(S, {
-      nome: p.nome || S.nome, clips: p.clips.filter(ok), marcatori: p.marcatori || [], sorgenti: p.sorgenti || {},
-      magnete: p.magnete !== false, pps: p.pps || S.pps, t: p.t || 0,
-    });
-    if (S.clips.length < p.clips.length) toast('Qualche file audio non è più sul telefono: le sue clip sono state tolte.', 5000);
-  } catch (e) { console.error(e); }
-  attesa(null);
+    attesa(null);
+  }
+  await metaSalva('attivo', S.id);
+  S.t = clamp(S.t, 0, totale());
+  aggiorna();
+  const m = mancanti();
+  if (m.length) toast(`Mancano ${m.length} file audio su questo telefono: importali di nuovo con lo stesso nome e si ricollegano da soli.`, 7000);
+}
+
+async function creaProgetto(nome) {
+  await salvaOra();
+  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, pps: 60, t: 0 };
+  await progettoSalva(rec);
+  await apriRegistro(rec);
+}
+
+async function avviaProgetti() {
+  // il vecchio formato aveva un solo progetto: lo trasformo nel primo della lista
+  const vecchio = await metaLeggi('corrente');
+  if (vecchio?.clips) {
+    const id = nuovoIdProg();
+    await progettoSalva({ ...vecchio, id, nome: vecchio.nome || 'Montaggio', aggiornato: Date.now() });
+    await metaSalva('attivo', id); await metaElimina('corrente');
+  }
+  const attivo = await metaLeggi('attivo');
+  let rec = attivo ? await progettoLeggi(attivo) : null;
+  if (!rec) rec = (await progettiTutti()).sort((a, b) => (b.aggiornato || 0) - (a.aggiornato || 0))[0];
+  if (rec) await apriRegistro(rec); else await creaProgetto('Montaggio');
 }
 
 (async function avvia() {
   try { await Promise.all([document.fonts.load('15px Staatliches'), document.fonts.load('15px "Libre Baskerville"')]); } catch { /* niente */ }
   ridimensiona();
-  await ripristina();
-  S.t = clamp(S.t, 0, totale());
-  aggiorna();
+  await avviaProgetti();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   controllaAggiornamenti(false);
   document.documentElement.dataset.pronto = '1';

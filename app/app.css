@@ -7,6 +7,9 @@ button,select,input{font:inherit;color:inherit}
 button{cursor:pointer}
 
 .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:var(--viola)}
+.nome-prog{display:flex;align-items:center;gap:6px;min-width:0;background:none;border:0;padding:4px 0;color:var(--ui-testo);font:400 21px/1 var(--font-titoli);letter-spacing:.04em;text-transform:uppercase}
+.nome-prog span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46vw}
+.nome-prog i{font-style:normal;color:var(--arancione);font-size:14px}
 .top h1{margin:0;font:400 19px/1 var(--font-titoli);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 .top h1 span{color:var(--arancione)}
 .top-az{display:flex;gap:6px;flex-shrink:0}
@@ -77,3 +80,17 @@ dialog input[type=range]{display:block;width:100%;margin-top:8px;accent-color:va
 .giro{display:block;width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:4px solid var(--ui-linea);border-top-color:var(--arancione);animation:g 1s linear infinite}
 @keyframes g{to{transform:rotate(360deg)}}
 @media (min-width:700px){#area{height:min(380px,50vh)}.barra{max-width:760px;width:100%;margin-inline:auto;border-radius:16px 16px 0 0}}
+
+dialog{max-height:90vh;overflow-y:auto}
+dialog h3{margin:18px 0 4px;font:400 17px/1 var(--font-titoli);letter-spacing:.06em;text-transform:uppercase;color:var(--giallo)}
+dialog input[type=text],dialog input[type=password]{display:block;width:100%;margin-top:6px;padding:10px;border-radius:10px;border:1.5px solid var(--ui-linea);background:var(--ui-sfondo);color:var(--ui-testo);font-size:16px}
+.pulsanti.sinistra{justify-content:flex-start;flex-wrap:wrap}
+.pulsanti.due-az .btn{flex:1;padding:12px 10px}
+#lista-progetti{display:flex;flex-direction:column;gap:8px;margin:8px 0 12px}
+.prog{border:1.5px solid var(--ui-linea);border-radius:12px;padding:10px 12px;background:var(--ui-sfondo)}
+.prog.aperto{border-color:var(--arancione)}
+.prog b{display:block;font:400 19px/1.1 var(--font-titoli);letter-spacing:.04em;text-transform:uppercase;overflow-wrap:anywhere}
+.prog small{display:block;margin:4px 0 8px;color:var(--ui-tenue);font:400 12px/1.4 var(--font-testi)}
+.prog .az{display:flex;gap:6px;flex-wrap:wrap}
+.prog .az button{padding:7px 9px;font-size:13px}
+.prog .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:99px;background:var(--arancione);color:var(--viola);font:400 12px/1.2 var(--font-titoli);letter-spacing:.05em;vertical-align:middle}

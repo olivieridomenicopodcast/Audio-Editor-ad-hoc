@@ -14,7 +14,8 @@ PWA (si pubblica con GitHub Pages da `main`, cartella root) per **montare l'audi
 - `app/modello.js`: logica di montaggio **pura** (clip, taglio, ripple, crossfade, fade, pause, annulla/ripristina). Nessun DOM, nessun audio: si prova in Node con `node scripts/prova-modello.mjs`.
 - `app/audio.js`: Web Audio (decodifica, picchi, riproduzione, rendering offline, codifica WAV).
 - `app/app.js`: timeline su canvas, gesti (pointer events), finestre, import/export.
-- `app/idb.js`: progetto e file audio salvati sul telefono (IndexedDB). `app/zip.js`: zip senza compressione.
+- `app/idb.js`: progetti e file audio salvati sul telefono (IndexedDB: store `progetti`, `audio`, `progetto`=impostazioni). `app/zip.js`: zip senza compressione.
+- `app/github.js`: sincronizzazione dei progetti con un repo GitHub (Push/Pull con token).
 - `app/build.js`: numero di build (generato).
 
 ## Come funziona il montaggio
@@ -34,6 +35,19 @@ L'audio deve uscire **identico** a come entra: niente effetti, niente ricampiona
 - Codifica WAV: scala simmetrica ×32768 / ×8388608 (così la lettura→scrittura è esatta). Nessun dither.
 - **Dopo ogni modifica a import/export/modello** esegui `node scripts/prova-neutro.cjs` (serve `python3 -m http.server 8765` nella cartella del repo): deve dire che le prove passano.
 
+## Progetti multipli
+- Un record per progetto in IndexedDB (`progetti`): clip, marcatori, sorgenti (nome, durata, canali, bytes), impostazioni. I file audio stanno nello store `audio`, **condivisi** tra progetti (la copia che l'app tiene per riaprirli; gli originali restano dove sono sul telefono).
+- Si cambia progetto dal nome in alto a sinistra (elenco: apri, rinomina, duplica, elimina, nuovo). Aprendone uno si tiene in memoria solo l'audio che gli serve.
+- Il vecchio formato (un solo progetto, chiave `corrente`) viene convertito al primo avvio.
+- «aggiornato» cambia solo se cambiano clip, marcatori o nome (non per uno scorrimento): serve al sync.
+
+## Sincronizzazione GitHub (scheda ⚙ Impostazioni)
+- Sincronizza **solo i progetti** (`progetti/<id>.json` nel repo scelto), mai l'audio. Un solo commit per Push (API git data, come DomePodcast Studio).
+- Push non sovrascrive un progetto che sul repo è più recente (lo segnala: fare prima Pull). Pull sostituisce solo se il remoto è più recente. I progetti cancellati qui si tolgono dal repo al Push successivo e il Pull non li riporta (`aeah-canc-v1`).
+- Un progetto ripreso con Pull non ha l'audio: le clip risultano «file mancante» e l'export è bloccato finché non si reimportano i file **con lo stesso nome** (si ricollegano da soli).
+- I dati arrivati dal repo si ripuliscono in `validaRegistro` prima di usarli.
+- **Il token non va mai scritto nel repo, nei log o nei test**: sta solo in `localStorage` (`aeah-gh-v1`). Per provare il sync usa il finto server di `scripts/prova-sync.cjs` (l'indirizzo dell'API è il campo `api` di quella chiave).
+
 ## Numero di build
 **Prima di OGNI commit** esegui: `sh scripts/aggiorna-build.sh && git add app/build.js`. Per l'app «build N» = numero di commit.
 
@@ -41,4 +55,4 @@ L'audio deve uscire **identico** a come entra: niente effetti, niente ricampiona
 Stale-while-revalidate. Ogni file nuovo usato dall'app va aggiunto alla lista `FILE`.
 
 ## Verifiche prima di consegnare
-`node scripts/prova-modello.mjs`, `node scripts/prova-neutro.cjs` e una prova con Playwright (viewport da telefono, nessun errore in console; importa due WAV, taglia, elimina, crossfade, esporta).
+`node scripts/prova-modello.mjs`, `node scripts/prova-neutro.cjs`, `node scripts/prova-sync.cjs` e una prova con Playwright (viewport da telefono, nessun errore in console; importa due WAV, taglia, elimina, crossfade, esporta).

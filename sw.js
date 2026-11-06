@@ -4,7 +4,7 @@
 const CACHE = 'audio-editor-ad-hoc-v1';
 const FILE = [
   './', 'index.html', 'manifest.webmanifest',
-  'app/app.css', 'app/app.js', 'app/modello.js', 'app/audio.js', 'app/idb.js', 'app/zip.js', 'app/build.js',
+  'app/app.css', 'app/app.js', 'app/modello.js', 'app/audio.js', 'app/idb.js', 'app/github.js', 'app/zip.js', 'app/build.js',
   'assets/brand.css',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png',
   'fonts/Staatliches-Regular.ttf', 'fonts/LibreBaskerville-var.ttf',

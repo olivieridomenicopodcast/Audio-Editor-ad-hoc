@@ -17,11 +17,11 @@
 </head>
 <body>
 <header class="top">
-  <h1>Audio Editor <span>ad hoc</span></h1>
+  <button id="nome-prog" class="nome-prog" type="button" aria-label="Progetti"><span id="nome-prog-t">Montaggio</span><i aria-hidden="true">▾</i></button>
   <div class="top-az">
     <button id="importa" class="btn" type="button">+ Importa</button>
     <button id="esporta" class="btn pieno" type="button">Esporta</button>
-    <button id="menu" class="btn icona" type="button" aria-label="Altro">⋯</button>
+    <button id="menu" class="btn icona" type="button" aria-label="Impostazioni">⚙</button>
   </div>
 </header>
 <div id="aggiorna" class="banner" hidden></div>
@@ -104,12 +104,37 @@
   </form>
 </dialog>
 
-<dialog id="d-menu">
+<dialog id="d-progetti">
   <form method="dialog">
-    <h2>Altro</h2>
-    <button id="m-aggiorna" value="x" class="btn blocco">Cerca aggiornamenti</button>
-    <button id="m-nuovo" value="x" class="btn blocco pericolo">Nuovo progetto (cancella tutto)</button>
+    <h2>Progetti</h2>
+    <div id="lista-progetti"></div>
+    <button id="pr-nuovo" type="button" class="btn pieno blocco">+ Nuovo progetto</button>
+    <p id="pr-spazio" class="nota"></p>
+    <div class="pulsanti"><button value="chiudi" class="btn">Chiudi</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-impo">
+  <form method="dialog">
+    <h2>Impostazioni</h2>
+
+    <h3>Sincronizzazione GitHub</h3>
+    <p class="nota">Salva i tuoi progetti (tagli, fade, marcatori: <b>non l'audio</b>) su un repo GitHub e li riprende su un altro dispositivo. Il token resta solo su questo telefono. Se il repo è pubblico, chiunque può leggere i nomi dei file e i punti di taglio.</p>
+    <label>Token GitHub<input id="g-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="incolla qui il token"></label>
+    <label>Repository (utente/nome)<input id="g-repo" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <label>Cartella nel repo<input id="g-cartella" type="text" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+    <div class="pulsanti sinistra"><button id="g-salva" type="button" class="btn">Salva e prova</button><button id="g-rimuovi" type="button" class="btn pericolo">Togli token</button></div>
+    <div class="pulsanti due-az"><button id="g-pull" type="button" class="btn">⬇ Pull</button><button id="g-push" type="button" class="btn pieno">⬆ Push</button></div>
+    <p id="g-stato" class="nota" role="status"></p>
+
+    <h3>App</h3>
     <p class="nota" id="m-info"></p>
+    <button id="m-aggiorna" type="button" class="btn blocco">Cerca aggiornamenti</button>
+
+    <h3>Dati sul telefono</h3>
+    <button id="m-libera" type="button" class="btn blocco">Libera spazio (file audio non usati)</button>
+    <button id="m-cancella" type="button" class="btn blocco pericolo">Cancella tutti i progetti e i file</button>
+
     <div class="pulsanti"><button value="chiudi" class="btn">Chiudi</button></div>
   </form>
 </dialog>
