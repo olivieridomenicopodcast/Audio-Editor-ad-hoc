@@ -147,7 +147,7 @@ function percorsoClip(x0, y0, w, h, r) {
   g.arcTo(x0, y0 + h, x0, y0, r); g.arcTo(x0, y0, x0 + w, y0, r); g.closePath();
 }
 
-function disegnaClip(c, sel) {
+function disegnaClip(c, sel, vis) {
   const x0 = xDi(c.start), x1 = xDi(M.fine(c)), h = alt(), y0 = TOP, w = x1 - x0;
   if (x1 < -2 || x0 > W + 2) return;
   g.save();
@@ -200,10 +200,30 @@ function disegnaClip(c, sel) {
   if (sel) {
     g.fillStyle = C.bianco;
     for (const x of [x0, x1]) { percorsoClip(x - 5, y0 + h / 2 - 22, 10, 44, 5); g.fill(); }
-    for (const x of [x0 + c.fadeIn * S.pps, x1 - c.fadeOut * S.pps]) {
+    const v = vis.get(c.id);
+    for (const x of [x0 + v.fi * S.pps, x1 - v.fo * S.pps]) {
       g.beginPath(); g.arc(x, y0, 10, 0, Math.PI * 2); g.fillStyle = C.bianco; g.fill();
       g.beginPath(); g.arc(x, y0, 4, 0, Math.PI * 2); g.fillStyle = C.viola; g.fill();
     }
+  }
+}
+
+/** Dove due clip si sovrappongono disegna la X del crossfade (una sfuma via, l'altra entra). */
+function disegnaCrossfade() {
+  const h = alt();
+  for (const { L, R } of M.sovrapposizioni(S.clips)) {
+    const xs = xDi(R.start), xe = xDi(M.fine(L));
+    if (xe < 0 || xs > W || xe - xs < 3) continue;
+    g.save();
+    g.beginPath(); g.rect(xs, TOP, xe - xs, h); g.clip();
+    g.fillStyle = 'rgba(46,25,118,.42)'; g.fillRect(xs, TOP, xe - xs, h);
+    g.strokeStyle = C.bianco; g.lineWidth = 2;
+    for (const gain of [(k) => Math.cos(k * Math.PI / 2), (k) => Math.sin(k * Math.PI / 2)]) {
+      g.beginPath();
+      for (let k = 0; k <= 20; k++) g[k ? 'lineTo' : 'moveTo'](xs + (xe - xs) * k / 20, TOP + h * (1 - gain(k / 20)));
+      g.stroke();
+    }
+    g.restore();
   }
 }
 
@@ -217,8 +237,10 @@ function disegna() {
   // corsia della traccia
   g.fillStyle = C['ui-pannello']; g.fillRect(Math.max(0, x00), TOP - 6, W, alt() + 12);
   const ord = [...S.clips].sort((a, b) => a.start - b.start);
-  for (const c of ord) if (c.id !== S.sel) disegnaClip(c, false);
-  const s = clipSel(); if (s) disegnaClip(s, true);
+  const vis = M.fadeVisibili(S.clips);
+  for (const c of ord) if (c.id !== S.sel) disegnaClip(c, false, vis);
+  const s = clipSel(); if (s) disegnaClip(s, true, vis);
+  disegnaCrossfade();
   // playhead fisso al centro
   g.strokeStyle = C.bianco; g.fillStyle = C.bianco; g.lineWidth = 2;
   g.beginPath(); g.moveTo(W / 2, RUL); g.lineTo(W / 2, H - 6); g.stroke();
@@ -269,7 +291,8 @@ function bersaglio(x, y) {
   const c = clipSel(), h = alt();
   if (c) {
     const x0 = xDi(c.start), x1 = xDi(M.fine(c));
-    const fadeI = x0 + c.fadeIn * S.pps, fadeO = x1 - c.fadeOut * S.pps;
+    const vf = M.fadeVisibili(S.clips).get(c.id);
+    const fadeI = x0 + vf.fi * S.pps, fadeO = x1 - vf.fo * S.pps;
     if (y >= TOP - 14 && y <= TOP + 34) {
       const di = Math.abs(x - fadeI), dof = Math.abs(x - fadeO);
       if (Math.min(di, dof) <= 26) return { tipo: di <= dof ? 'fadeIn' : 'fadeOut', c };
@@ -298,7 +321,7 @@ cv.addEventListener('pointerdown', (e) => {
   }
   const b = bersaglio(x, y);
   if (riprod && b.tipo !== 'pan' && b.tipo !== 'clip') ferma();
-  gesto = { tipo: b.tipo, id: b.c?.id, x0: x, y0: y, t0: S.t, orig: M.copia(S.clips), mosso: false, ts: performance.now(), u: false };
+  gesto = { tipo: b.tipo, id: b.c?.id, x0: x, y0: y, t0: S.t, orig: M.copia(S.clips), mosso: false, ts: performance.now(), u: false, vis: M.fadeVisibili(S.clips) };
 });
 
 cv.addEventListener('pointermove', (e) => {
@@ -343,8 +366,8 @@ cv.addEventListener('pointermove', (e) => {
       S.clips = M.gestoTrim(gesto.orig, o.id, sx ? 'sx' : 'dx', d, S.magnete, durSorgente(o));
       break;
     }
-    case 'fadeIn': muta(); S.clips = M.gestoFade(gesto.orig, o.id, 'in', (o.fadeIn || 0) + dt); break;
-    case 'fadeOut': muta(); S.clips = M.gestoFade(gesto.orig, o.id, 'out', (o.fadeOut || 0) - dt); break;
+    case 'fadeIn': muta(); S.clips = M.gestoFade(gesto.orig, o.id, 'in', gesto.vis.get(o.id).fi + dt); break;
+    case 'fadeOut': muta(); S.clips = M.gestoFade(gesto.orig, o.id, 'out', gesto.vis.get(o.id).fo - dt); break;
   }
   aggiorna();
 });

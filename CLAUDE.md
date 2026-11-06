@@ -23,7 +23,7 @@ PWA (si pubblica con GitHub Pages da `main`, cartella root) per **montare l'audi
 - Il **playhead è fisso al centro**, scorre la timeline (come BandLab). Taglio = porti il playhead nel punto e premi «Taglia».
 - **Magnete** acceso: «Elimina» e il trim dei bordi chiudono il buco (le clip dopo scorrono a sinistra); spostando una clip o un bordo si aggancia a bordi di altre clip e playhead. Spento: tutto resta dov'è.
 - **Fade**: angoli in alto della clip selezionata (sinistro = fade in, destro = fade out). Curva a potenza costante (seno/coseno).
-- **Crossfade**: la clip selezionata si sovrappone alla precedente di N ms.
+- **Crossfade a X (come Audition)**: se due clip si sovrappongono (trascinandole a mano o con il trim dei bordi), nella zona in comune la prima sfuma via e la seconda entra, a potenza costante. Le dissolvenze sono **derivate dalla geometria** (`sovrapposizioni`, `fadeAutomatici` in `modello.js`): non si salvano, spariscono da sole se separi le clip. Una clip tutta dentro un'altra NON è un crossfade (suonano entrambe). Il pulsante «Crossfade» crea solo la sovrapposizione di N ms con la clip precedente.
 - Su ogni taglio non continuo c'è un micro-declick di 3 ms (`DECLICK`) contro i click.
 - Export: WAV unico oppure zip di clip separate + `posizioni.txt` (per ricomporle in Pro Tools).
 

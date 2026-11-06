@@ -38,19 +38,53 @@ export function normalizzaFade(c) {
 const continue_ = (a, b) => a.src === b.src && Math.abs(fine(a) - b.start) < EPS && Math.abs(a.off + a.dur - b.off) < EPS;
 
 /**
+ * Sovrapposizioni «a crossfade», come in Audition: la seconda clip inizia dentro la prima e finisce insieme o dopo.
+ * Nella zona in comune la prima sfuma in uscita e la seconda in entrata (a X). x = durata della sovrapposizione.
+ */
+export function sovrapposizioni(clips) {
+  const ord = [...clips].sort((a, b) => a.start - b.start), out = [];
+  for (let i = 0; i < ord.length; i++) {
+    for (let j = i + 1; j < ord.length; j++) {
+      const L = ord[i], R = ord[j];
+      if (R.start >= fine(L) - 0.002) break;                       // le successive iniziano ancora più tardi
+      if (R.start < L.start + 0.002 || fine(R) < fine(L) - EPS) continue; // se R sta tutta dentro L non è un crossfade
+      out.push({ L, R, x: Math.min(fine(L) - R.start, L.dur, R.dur) });
+    }
+  }
+  return out;
+}
+
+/** Dissolvenze nate dalle sovrapposizioni: Map id → {fi, fo}. Spariscono da sole se separi le clip. */
+export function fadeAutomatici(clips) {
+  const m = new Map(clips.map((c) => [c.id, { fi: 0, fo: 0 }]));
+  for (const { L, R, x } of sovrapposizioni(clips)) {
+    m.get(L.id).fo = Math.max(m.get(L.id).fo, x);
+    m.get(R.id).fi = Math.max(m.get(R.id).fi, x);
+  }
+  return m;
+}
+
+/** Dissolvenze che si vedono (e si trascinano): quelle scelte o quelle della sovrapposizione, la maggiore. */
+export function fadeVisibili(clips) {
+  const auto = fadeAutomatici(clips), m = new Map();
+  for (const c of clips) m.set(c.id, { fi: Math.max(c.fadeIn || 0, auto.get(c.id).fi), fo: Math.max(c.fadeOut || 0, auto.get(c.id).fo) });
+  return m;
+}
+
+/**
  * Dissolvenze effettive di ogni clip (quelle scelte + il micro-declick). Ritorna Map id → {fi, fo}.
  * Il micro-declick c'è SOLO su un bordo che hai tagliato tu (dentro il file) e che non è un taglio continuo:
  * l'inizio e la fine naturali di un file restano intatti, così senza modifiche l'audio esce identico.
  * durSorgente(src) = durata del file in secondi (senza, ogni bordo si considera tagliato).
  */
 export function fadeEffettivi(clips, durSorgente = () => Infinity) {
-  const m = new Map();
+  const m = new Map(), auto = fadeAutomatici(clips);
   for (const c of clips) {
     const sx = clips.some((x) => x !== c && continue_(x, c));
     const dx = clips.some((x) => x !== c && continue_(c, x));
     const taglioSx = c.off > EPS, taglioDx = c.off + c.dur < durSorgente(c.src) - EPS;
-    const fi = Math.max(c.fadeIn || 0, !sx && taglioSx ? DECLICK : 0);
-    const fo = Math.max(c.fadeOut || 0, !dx && taglioDx ? DECLICK : 0);
+    const fi = Math.max(c.fadeIn || 0, auto.get(c.id).fi, !sx && taglioSx ? DECLICK : 0);
+    const fo = Math.max(c.fadeOut || 0, auto.get(c.id).fo, !dx && taglioDx ? DECLICK : 0);
     const tot = fi + fo, lim = Math.max(0, c.dur - 0.001);
     const k = tot > lim && tot > 0 ? lim / tot : 1;
     m.set(c.id, { fi: fi * k, fo: fo * k });
@@ -104,9 +138,6 @@ export function crossfade(stato, id, sec, ripple) {
   if (x < 0.002) return { ok: false, motivo: 'Le clip sono troppo corte.' };
   const fOrig = fine(c);
   c.start = fine(prec) - x;
-  prec.fadeOut = Math.max(prec.fadeOut || 0, x);
-  c.fadeIn = Math.max(c.fadeIn || 0, x);
-  normalizzaFade(prec); normalizzaFade(c);
   if (ripple) for (const k of clips) if (k !== c && k !== prec && k.start >= fOrig - EPS) k.start -= x;
   return { ok: true, sec: x };
 }

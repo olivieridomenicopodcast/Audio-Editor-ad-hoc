@@ -32,7 +32,18 @@ assert.equal(f2.get(c0.id).fi, 0);
 const r = M.crossfade(stato, c2.id, 0.08, true);
 assert.ok(r.ok, r.motivo);
 assert.ok(Math.abs(M.trova(stato.clips, c2.id).start - (4 - 0.08)) < 1e-9);
-assert.ok(M.trova(stato.clips, c0.id).fadeOut >= 0.08);
+const fx = M.fadeEffettivi(stato.clips, dur);
+assert.ok(fx.get(c0.id).fo >= 0.08 - 1e-9 && fx.get(c2.id).fi >= 0.08 - 1e-9, 'la sovrapposizione crea il crossfade a X');
+// separando le clip il crossfade sparisce da solo
+const sep = M.copia(stato.clips); M.trova(sep, c2.id).start += 1;
+assert.ok(M.fadeEffettivi(sep, dur).get(c0.id).fo < 0.01, 'senza sovrapposizione niente crossfade');
+// una clip tutta dentro un'altra non è un crossfade
+const dentro = [{ id: 'A', src: 's', nome: 'A', start: 0, off: 0, dur: 10, fadeIn: 0, fadeOut: 0 }, { id: 'B', src: 's', nome: 'B', start: 2, off: 0, dur: 3, fadeIn: 0, fadeOut: 0 }];
+assert.equal(M.sovrapposizioni(dentro).length, 0);
+// sovrapposizione fatta a mano (trascinando): 0,3 s
+const mano = [{ id: 'A', src: 's', nome: 'A', start: 0, off: 0, dur: 5, fadeIn: 0, fadeOut: 0 }, { id: 'B', src: 's', nome: 'B', start: 4.7, off: 0, dur: 5, fadeIn: 0, fadeOut: 0 }];
+const fm = M.fadeAutomatici(mano);
+assert.ok(Math.abs(fm.get('A').fo - 0.3) < 1e-9 && Math.abs(fm.get('B').fi - 0.3) < 1e-9);
 
 // gesti: trim con ripple (a sinistra attaccata) e senza
 const base = M.copia(stato.clips);
