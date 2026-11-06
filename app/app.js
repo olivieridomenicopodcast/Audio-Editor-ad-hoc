@@ -575,6 +575,7 @@ addEventListener('keydown', (e) => {
 });
 
 /* ---------- aggiornamenti e avvio ---------- */
+$('#build').textContent = `build ${BUILD}`;
 async function controllaAggiornamenti(manuale) {
   try {
     const r = await fetch('app/build.js?check&t=' + Date.now(), { cache: 'no-store' });

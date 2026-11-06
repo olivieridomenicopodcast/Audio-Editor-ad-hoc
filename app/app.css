@@ -45,6 +45,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 .chips .vuoto{color:var(--ui-tenue);font-size:13px;font-family:var(--font-testi)}
 
 .barra{margin-top:auto;background:var(--ui-pannello);border-top:1px solid var(--ui-linea);padding:10px 10px calc(10px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+.build{margin-top:-4px;font:400 11px/1 var(--font-ui);color:var(--ui-tenue)}
 .riga{display:flex;gap:8px;justify-content:space-between}
 .tool{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;border-radius:12px;border:1.5px solid var(--ui-linea);background:var(--ui-sfondo);font:400 13px/1 var(--font-titoli);letter-spacing:.05em;text-transform:uppercase;min-width:0}
 .tool svg{width:26px;height:26px}
