@@ -1,0 +1,51 @@
+{
+ "v": 1,
+ "id": "pmw4qhwolsrgm",
+ "nome": "Montaggio",
+ "aggiornato": 1793955015093,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmw4m2oih2",
+   "src": "scmw4m2l8m0",
+   "nome": "Turrini_02",
+   "start": 0,
+   "off": 2.453125,
+   "dur": 3.3053333333333335,
+   "fadeIn": 0.4171875,
+   "fadeOut": 0.09711359559139901
+  },
+  {
+   "id": "cmw4ph1ak1",
+   "src": "scmw4m2l8m0",
+   "nome": "Turrini_02",
+   "start": 3.3053333333333335,
+   "off": 6.128770833333333,
+   "dur": 13.681363048765682,
+   "fadeIn": 0.13516395175878926,
+   "fadeOut": 0.3064848957564258
+  },
+  {
+   "id": "cmw4pjjjt4",
+   "src": "scmw4m2l8m0",
+   "nome": "Turrini_02",
+   "start": 17.272519374770738,
+   "off": 30.58732852926569,
+   "dur": 575.2827964707343,
+   "fadeIn": 0.35135730960906786,
+   "fadeOut": 0
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmw4m2l8m0": {
+   "nome": "Turrini_02",
+   "durata": 605.870125,
+   "canali": 1,
+   "bytes": 87708096
+  }
+ },
+ "magnete": true,
+ "pps": 82.44812106579374,
+ "t": 18.10294697925433
+}
