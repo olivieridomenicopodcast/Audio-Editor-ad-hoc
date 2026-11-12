@@ -71,6 +71,7 @@ const attendi = async (p, fn, t = 15000) => { const f = Date.now(); while (Date.
   await A.setInputFiles('#file', path.join(T, 'Uno.wav')); await A.waitForTimeout(800);
   A.risposta = 'Secondo'; await A.click('#nome-prog'); await A.click('#pr-nuovo'); await A.waitForTimeout(500);
   await A.setInputFiles('#file', path.join(T, 'Due.wav')); await A.waitForTimeout(800);
+  await A.evaluate(() => { window.__S.t = 1.5; }); await A.click('#b-taglia'); // un taglio col fade sui tagli acceso (default dei progetti nuovi)
   await A.click('#nome-prog'); await A.waitForTimeout(500); const righe = await A.locator('.prog').count();
   verifica(righe === 2, `la lista mostra 2 progetti (${righe})`);
   await chiudi(A);
@@ -87,10 +88,11 @@ const attendi = async (p, fn, t = 15000) => { const f = Date.now(); while (Date.
   await B.click('#nome-prog'); await B.waitForTimeout(500); verifica((await B.locator('.prog').count()) === 3, 'B ha 3 progetti (il suo vuoto + 2 arrivati)');
   await B.locator('.prog', { hasText: 'Secondo' }).getByText('Apri').click(); await B.waitForTimeout(800);
   const manc = await B.evaluate(() => Object.keys(window.__S.sorgenti).length);
-  verifica(manc === 1 && (await B.evaluate(() => window.__S.clips.length)) === 1, 'il progetto «Secondo» è arrivato con la sua clip');
+  verifica(manc === 1 && (await B.evaluate(() => window.__S.clips.length)) === 2, 'il progetto «Secondo» è arrivato con le sue 2 clip');
+  verifica(await B.evaluate(() => { const [a, b2] = window.__S.clips; return a.ftDx === 0.2 && b2.ftSx === 0.2 && window.__S.fadeTaglio.attivo && window.__S.fadeTaglio.v2; }), 'i segni del fade sui tagli e l\'impostazione viaggiano col sync');
   await B.click('#esporta'); verifica(/Mancano/.test(await B.textContent('#toast')), 'l\'export è bloccato finché mancano i file');
   await B.setInputFiles('#file', path.join(T, 'Due.wav')); await B.waitForTimeout(1000);
-  verifica(/Ricollegati 1/.test(await B.textContent('#toast')) && (await B.evaluate(() => window.__S.clips.length)) === 1, 'importando «Due.wav» il file si ricollega senza aggiungere clip');
+  verifica(/Ricollegati 1/.test(await B.textContent('#toast')) && (await B.evaluate(() => window.__S.clips.length)) === 2, 'importando «Due.wav» il file si ricollega senza aggiungere clip');
 
   console.log('Cancellazione e Push');
   A.risposta = null; await A.click('#nome-prog');

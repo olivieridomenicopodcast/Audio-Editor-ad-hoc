@@ -37,17 +37,25 @@ async function prova(nome, bit) {
   await p.evaluate(() => { window.__S.fadeTaglio = { attivo: false, ms: 200 }; }); // prima la base: fade sui tagli spento
   let out = await esporta();
   verifica(Buffer.compare(od, dati(out)) === 0, 'senza modifiche: identico byte per byte');
-  await p.evaluate(() => { window.__S.t = 2; }); await p.click('#b-taglia');
-  await p.evaluate(() => { window.__S.t = 3; }); await p.click('#b-taglia');
-  await p.evaluate(() => { window.__S.sel = window.__S.clips.find((c) => Math.abs(c.start - 2) < 1e-9).id; }); await p.click('#b-elimina');
+  const tagliaEElimina = async () => {
+    await p.evaluate(() => { window.__S.t = 2; }); await p.click('#b-taglia');
+    await p.evaluate(() => { window.__S.t = 3; }); await p.click('#b-taglia');
+    await p.evaluate(() => { window.__S.sel = window.__S.clips.find((c) => Math.abs(c.start - 2) < 1e-9).id; }); await p.click('#b-elimina');
+  };
+  await tagliaEElimina();
   out = await esporta(); const xd = dati(out);
   const f2 = fo.sr * 2, f3 = fo.sr * 3, dc = Math.round(fo.sr * 0.003);
   const diff = (a0, b0, n) => { let k = 0; for (let i = 0; i < n * fb; i++) if (od[a0 * fb + i] !== xd[b0 * fb + i]) k++; return k; };
   verifica(xd.length / fb === od.length / fb - fo.sr, 'dopo il taglio: durata giusta (1 s in meno)');
   verifica(diff(0, 0, f2 - dc) === 0, 'prima del taglio: campioni identici');
   verifica(diff(f3 + dc, f2 + dc, od.length / fb - f3 - dc) === 0, 'dopo il taglio: campioni identici');
-  // fade sui tagli acceso (200 ms): fuori dalla zona del fade identico, dentro la curva a potenza costante
-  await p.evaluate(() => { window.__S.fadeTaglio = { attivo: true, ms: 200 }; });
+  // il fade sui tagli vale solo per i tagli NUOVI: accendendolo adesso i tagli già fatti restano identici
+  await p.evaluate(() => { window.__S.fadeTaglio = { attivo: true, ms: 200, v2: true }; });
+  out = await esporta(); const stessi = dati(out);
+  verifica(Buffer.compare(xd, stessi) === 0, 'accendendo il fade, i tagli già fatti restano identici (stesso file di prima)');
+  // ...e un taglio fatto DOPO averlo acceso: fuori dalla zona del fade identico, dentro la curva a potenza costante
+  for (let i = 0; i < 3; i++) await p.click('#b-annulla');
+  await tagliaEElimina();
   out = await esporta(); const yd = dati(out), nfo = Math.round(fo.sr * 0.2), sb = fo.bit / 8;
   const camp = (b, idx) => (fo.bit === 16 ? b.readInt16LE(idx * fb) : b.readIntLE(idx * fb, 3));
   const dif2 = (a0, b0, n) => { let k = 0; for (let i = 0; i < n * fb; i++) if (od[a0 * fb + i] !== yd[b0 * fb + i]) k++; return k; };

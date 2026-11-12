@@ -67,19 +67,21 @@ export function fadeAutomatici(clips) {
 /**
  * Dissolvenze che si vedono (e si trascinano) di ogni clip: Map id → { fi, fo, sx, dx, tagSx, tagDx }.
  * Ordine di priorità su ogni bordo: sovrapposizione (crossfade a X) > dissolvenza scelta a mano (> 0) > fade automatico sui tagli.
- * Il «fade sui tagli» (fadeTaglio, in secondi; 0 = spento) si applica solo a un bordo che hai TAGLIATO dentro il file
- * e che NON è continuo con la clip vicina: se tagli e lasci le due metà attaccate non cambia niente (niente buco di volume),
- * il fade compare quando le metà si separano (per esempio togliendo un respiro). Inizio e fine naturali dei file restano intatti.
+ * Il «fade sui tagli» è scritto sul bordo nel momento in cui fai il taglio (ftSx = bordo sinistro, ftDx = bordo destro,
+ * in secondi; assente o 0 = nessuno): così vale solo per i tagli NUOVI e i vecchi non cambiano. Si applica solo a un
+ * bordo tagliato dentro il file e NON continuo con la clip vicina: se tagli e lasci le due metà attaccate non cambia niente
+ * (niente buco di volume), il fade compare quando le metà si separano (per esempio togliendo un respiro).
+ * Inizio e fine naturali dei file restano intatti.
  */
-export function fadeVisibili(clips, durSorgente = () => Infinity, fadeTaglio = 0) {
+export function fadeVisibili(clips, durSorgente = () => Infinity) {
   const ov = fadeAutomatici(clips), m = new Map();
   for (const c of clips) {
     const sx = clips.some((x) => x !== c && continue_(x, c));
     const dx = clips.some((x) => x !== c && continue_(c, x));
     const tagSx = c.off > EPS, tagDx = c.off + c.dur < durSorgente(c.src) - EPS;
     const o = ov.get(c.id);
-    const autoI = fadeTaglio > 0 && !sx && tagSx && o.fi === 0 ? fadeTaglio : 0;
-    const autoO = fadeTaglio > 0 && !dx && tagDx && o.fo === 0 ? fadeTaglio : 0;
+    const autoI = (c.ftSx || 0) > 0 && !sx && tagSx && o.fi === 0 ? c.ftSx : 0;
+    const autoO = (c.ftDx || 0) > 0 && !dx && tagDx && o.fo === 0 ? c.ftDx : 0;
     m.set(c.id, {
       fi: Math.max((c.fadeIn || 0) > 0 ? c.fadeIn : autoI, o.fi),
       fo: Math.max((c.fadeOut || 0) > 0 ? c.fadeOut : autoO, o.fo),
@@ -93,10 +95,10 @@ export function fadeVisibili(clips, durSorgente = () => Infinity, fadeTaglio = 0
  * Dissolvenze effettive di ogni clip (quelle che si vedono + il micro-declick). Ritorna Map id → {fi, fo}.
  * Il micro-declick (3 ms) c'è solo su un bordo che hai tagliato tu (dentro il file) e che non è un taglio continuo:
  * l'inizio e la fine naturali di un file restano intatti, così senza modifiche l'audio esce identico.
- * durSorgente(src) = durata del file in secondi (senza, ogni bordo si considera tagliato). fadeTaglio: vedi fadeVisibili.
+ * durSorgente(src) = durata del file in secondi (senza, ogni bordo si considera tagliato).
  */
-export function fadeEffettivi(clips, durSorgente = () => Infinity, fadeTaglio = 0) {
-  const vis = fadeVisibili(clips, durSorgente, fadeTaglio), m = new Map();
+export function fadeEffettivi(clips, durSorgente = () => Infinity) {
+  const vis = fadeVisibili(clips, durSorgente), m = new Map();
   for (const c of clips) {
     const v = vis.get(c.id);
     const fi = Math.max(v.fi, !v.sx && v.tagSx ? DECLICK : 0);
@@ -117,13 +119,18 @@ export function guadagno(c, fi, fo, t) {
 
 /* ---------- operazioni (modificano lo stato) ---------- */
 
+/** Secondi di fade sui tagli per un'impostazione { attivo, ms } (0 = spento). */
+export const secFadeTaglio = (imp) => (imp && imp.attivo ? Math.max(0, Math.min(1, (imp.ms || 0) / 1000)) : 0);
+
 /** Taglia la clip sotto il tempo t. Ritorna l'id della parte destra, oppure null se non c'è nulla da tagliare. */
 export function taglia(stato, t) {
   const c = clipA(stato.clips, t);
   if (!c || t - c.start < MIN_DUR || fine(c) - t < MIN_DUR) return null;
-  const d = { ...c, id: nuovoId(), start: t, off: c.off + (t - c.start), dur: fine(c) - t, fadeIn: 0 };
+  const ft = secFadeTaglio(stato.fadeTaglio); // il fade sui tagli in vigore adesso: lo scriviamo sui due bordi nuovi
+  const d = { ...c, id: nuovoId(), start: t, off: c.off + (t - c.start), dur: fine(c) - t, fadeIn: 0, ftSx: ft };
   c.dur = t - c.start;
   c.fadeOut = 0;
+  c.ftDx = ft;
   normalizzaFade(c); normalizzaFade(d);
   stato.clips.push(d);
   ordina(stato.clips);
@@ -182,8 +189,9 @@ export function gestoSposta(orig, id, nuovoStart) {
  * Senza magnete il contenuto resta fermo sulla timeline (slip del bordo).
  * Con il magnete la clip resta attaccata a sinistra e quelle dopo scorrono (ripple).
  * durSorgente = durata totale del file, per non uscire dall'audio disponibile.
+ * ft = fade sui tagli (secondi) da scrivere sul bordo trascinato (che diventa un taglio nuovo); null = non toccarlo.
  */
-export function gestoTrim(orig, id, lato, d, ripple, durSorgente) {
+export function gestoTrim(orig, id, lato, d, ripple, durSorgente, ft = null) {
   const clips = copia(orig);
   const c = trova(clips, id);
   const o = trova(orig, id);
@@ -194,10 +202,12 @@ export function gestoTrim(orig, id, lato, d, ripple, durSorgente) {
     c.dur = o.dur - d;
     c.start = ripple ? o.start : o.start + d;
     c.fadeIn = Math.min(o.fadeIn || 0, c.dur);
+    if (ft != null) c.ftSx = ft;
     if (ripple) for (const x of clips) if (x.id !== id && x.start >= vecchiaFine - EPS) x.start -= d;
   } else {
     d = Math.min(Math.max(d, MIN_DUR - o.dur), durSorgente - (o.off + o.dur));
     c.dur = o.dur + d;
+    if (ft != null) c.ftDx = ft;
     if (ripple) for (const x of clips) if (x.id !== id && x.start >= vecchiaFine - EPS) x.start += d;
   }
   normalizzaFade(c);
@@ -237,7 +247,7 @@ export function aggancia(valore, punti, soglia) {
  * (togliendo dal centro), poi chiude i buchi. picchi(srcId) → { passo, max } oppure null.
  * Ritorna { pause, rimosso } (numero di pause accorciate, secondi tolti).
  */
-export function accorciaPause(stato, picchi, { sogliaDb = -45, minDur = 0.8, mantieni = 0.4 } = {}) {
+export function accorciaPause(stato, picchi, { sogliaDb = -45, minDur = 0.8, mantieni = 0.4, fadeTaglio = 0 } = {}) {
   const soglia = Math.pow(10, sogliaDb / 20);
   const clips = ordina(copia(stato.clips));
   const nuove = [];
@@ -270,6 +280,8 @@ export function accorciaPause(stato, picchi, { sogliaDb = -45, minDur = 0.8, man
           start: c.start + (a - c.off) - spostamento,
           fadeIn: k === 0 ? c.fadeIn : 0, fadeOut: k === pezzi.length - 1 ? c.fadeOut : 0,
         };
+        if (k > 0) p.ftSx = fadeTaglio;                  // i bordi creati dal taglio delle pause sono nuovi
+        if (k < pezzi.length - 1) p.ftDx = fadeTaglio;
         nuove.push(normalizzaFade(p));
       }
       if (k < tagli.length) { spostamento += tagli[k][1] - tagli[k][0]; pause++; }
@@ -296,4 +308,18 @@ export function nuovaStoria(max = 100) {
     puoRipristinare: () => redo.length > 0,
     svuota() { undo.length = 0; redo.length = 0; },
   };
+}
+
+/**
+ * Progetti salvati con la build 14: il fade sui tagli valeva per tutti i bordi di un progetto «acceso».
+ * Per non cambiare il loro suono lo scrivo sui bordi che non hanno ancora un valore. Ritorna true se ha cambiato qualcosa.
+ */
+export function migraFadeTaglio(clips, sec) {
+  if (!(sec > 0)) return false;
+  let cambiato = false;
+  for (const c of clips) {
+    if (c.ftSx === undefined) { c.ftSx = sec; cambiato = true; }
+    if (c.ftDx === undefined) { c.ftDx = sec; cambiato = true; }
+  }
+  return cambiato;
 }

@@ -9,7 +9,7 @@ import { zipStore } from './zip.js';
 const $ = (s) => document.querySelector(s);
 
 /* ---------- stato ---------- */
-const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0, fadeTaglio: { attivo: true, ms: 200 } };
+const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0, fadeTaglio: { attivo: true, ms: 200, v2: true } };
 if (location.search.includes('debug')) window.__S = S; // solo per le prove automatiche
 const buffers = new Map();   // id sorgente → AudioBuffer
 const picchi = new Map();    // id sorgente → picchi per la forma d'onda
@@ -68,10 +68,10 @@ const registro = () => ({
   v: 1, id: S.id, nome: S.nome, aggiornato: S.aggiornato, rate: S.rate, clips: S.clips, marcatori: S.marcatori,
   sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t, fadeTaglio: S.fadeTaglio,
 });
-/** Fade automatico sui tagli, in secondi (0 = spento), e durata dei file: servono a calcolare le dissolvenze. */
-const fadeT = () => (S.fadeTaglio?.attivo ? (S.fadeTaglio.ms || 0) / 1000 : 0);
+/** Fade sui tagli in vigore adesso (secondi, 0 = spento) e durata dei file: servono a scrivere/calcolare le dissolvenze. */
+const fadeT = () => M.secFadeTaglio(S.fadeTaglio);
 const durSrc = (id) => buffers.get(id)?.duration ?? Infinity;
-const visibili = () => M.fadeVisibili(S.clips, durSrc, fadeT());
+const visibili = () => M.fadeVisibili(S.clips, durSrc);
 function guardia() { clearTimeout(guardaT); guardaT = setTimeout(salvaOra, 500); }
 /** Salva subito il progetto aperto. «aggiornato» cambia solo se sono cambiati clip, marcatori o nome (non per un semplice scorrimento). */
 async function salvaOra() {
@@ -393,7 +393,7 @@ cv.addEventListener('pointermove', (e) => {
         const p = M.puntiAggancio(gesto.orig, o.id, S.t), bordo = sx ? o.start : M.fine(o);
         d = M.aggancia(bordo + d, p, th) - bordo;
       }
-      S.clips = M.gestoTrim(gesto.orig, o.id, sx ? 'sx' : 'dx', d, S.magnete, durSorgente(o));
+      S.clips = M.gestoTrim(gesto.orig, o.id, sx ? 'sx' : 'dx', d, S.magnete, durSorgente(o), fadeT());
       break;
     }
     case 'fadeIn': muta(); S.clips = M.gestoFade(gesto.orig, o.id, 'in', gesto.vis.get(o.id).fi + dt); break;
@@ -433,7 +433,7 @@ function suona() {
   const c = contesto();
   if (S.t >= totale() - 0.02) S.t = 0;
   const tc = c.currentTime + 0.06;
-  riprod = { t0: S.t, tc, nodi: programma(c, S.clips, buffers, S.t, tc, null, fadeT()) };
+  riprod = { t0: S.t, tc, nodi: programma(c, S.clips, buffers, S.t, tc) };
   cicloRiprod();
 }
 function cicloRiprod() {
@@ -511,7 +511,7 @@ dPause.addEventListener('close', () => {
   let r;
   modifica(() => {
     r = M.accorciaPause(S, (id) => { const p = picchi.get(id); return p ? { passo: p.passo, max: p.ass } : null; },
-      { sogliaDb: +$('#p-soglia').value, minDur: +$('#p-min').value, mantieni: +$('#p-man').value });
+      { sogliaDb: +$('#p-soglia').value, minDur: +$('#p-min').value, mantieni: +$('#p-man').value, fadeTaglio: fadeT() });
     return r.pause > 0;
   });
   toast(r.pause ? `${r.pause} pause accorciate: tolti ${r.rimosso.toFixed(1).replace('.', ',')} s` : 'Nessuna pausa abbastanza lunga: prova ad alzare la soglia.');
@@ -530,9 +530,9 @@ $('#b-fadetaglio').onclick = () => {
 };
 dFT.addEventListener('close', () => {
   if (dFT.returnValue !== 'ok') return;
-  S.fadeTaglio = { attivo: $('#ft-attivo').checked, ms: +$('#ft-ms').value };
+  S.fadeTaglio = { attivo: $('#ft-attivo').checked, ms: +$('#ft-ms').value, v2: true };
   fineModifica();
-  toast(S.fadeTaglio.attivo ? `Fade sui tagli: ${S.fadeTaglio.ms} ms` : 'Fade sui tagli spento');
+  toast(S.fadeTaglio.attivo ? `Fade sui tagli: ${S.fadeTaglio.ms} ms, dai prossimi tagli` : 'Fade sui tagli spento (i tagli già fatti restano come sono)', 3500);
 });
 
 /* ---------- progetti ---------- */
@@ -683,12 +683,13 @@ function validaRegistro(r) {
   const clips = (Array.isArray(r.clips) ? r.clips : []).map((c) => ({
     id: String(c?.id || '').slice(0, 40), src: String(c?.src), nome: String(c?.nome || '').slice(0, 120),
     start: Math.max(0, num(c?.start)), off: Math.max(0, num(c?.off)), dur: num(c?.dur), fadeIn: Math.max(0, num(c?.fadeIn)), fadeOut: Math.max(0, num(c?.fadeOut)),
+    ...(c?.ftSx !== undefined ? { ftSx: clamp(num(c.ftSx), 0, 1) } : {}), ...(c?.ftDx !== undefined ? { ftDx: clamp(num(c.ftDx), 0, 1) } : {}),
   })).filter((c) => c.id && sorgenti[c.src] && c.dur >= M.MIN_DUR);
   return {
     v: 1, id: r.id, nome: String(r.nome || 'Montaggio').slice(0, 60), aggiornato: Math.max(0, num(r.aggiornato)), rate: Math.max(0, num(r.rate)),
     clips, marcatori: (Array.isArray(r.marcatori) ? r.marcatori : []).map(Number).filter(Number.isFinite), sorgenti,
     magnete: r.magnete !== false, pps: clamp(num(r.pps, 60), 4, 1500), t: Math.max(0, num(r.t)),
-    fadeTaglio: { attivo: !!r.fadeTaglio?.attivo, ms: clamp(Math.round(num(r.fadeTaglio?.ms, 200)), 5, 1000) },
+    fadeTaglio: { attivo: !!r.fadeTaglio?.attivo, ms: clamp(Math.round(num(r.fadeTaglio?.ms, 200)), 5, 1000), v2: !!r.fadeTaglio?.v2 },
   };
 }
 
@@ -778,7 +779,7 @@ dEsp.addEventListener('close', async () => {
   try {
     attesa('Calcolo il montaggio…'); await respira();
     if ($('#e-tipo').value === 'wav') {
-      const buf = renderizzaDiretto(S.clips, buffers, { rate, canali, fadeTaglio: fadeT() });
+      const buf = renderizzaDiretto(S.clips, buffers, { rate, canali });
       attesa('Creo il file WAV…'); await respira();
       await consegna(codificaWav(buf, bit), nome + '.wav');
     } else {
@@ -787,7 +788,7 @@ dEsp.addEventListener('close', async () => {
       for (let i = 0; i < ord.length; i++) {
         const c = ord[i];
         attesa(`Clip ${i + 1} di ${ord.length}…`); await respira();
-        const buf = renderizzaDiretto(S.clips, buffers, { da: c.start, a: M.fine(c), rate, canali, solo: new Set([c.id]), fadeTaglio: fadeT() });
+        const buf = renderizzaDiretto(S.clips, buffers, { da: c.start, a: M.fine(c), rate, canali, solo: new Set([c.id]) });
         const nf = `${pad(i + 1)}_${nomeSicuro(c.nome)}.wav`;
         files.push({ name: nf, data: new Uint8Array(await codificaWav(buf, bit).arrayBuffer()) });
         righe.push(`${nf}  →  inizio ${tempo(c.start)}  ·  durata ${tempo(c.dur)}`);
@@ -858,8 +859,10 @@ async function apriRegistro(rec) {
     id: rec.id, nome: rec.nome || 'Montaggio', aggiornato: rec.aggiornato || 0, rate: rec.rate || 0, clips: rec.clips || [],
     marcatori: rec.marcatori || [], sorgenti: rec.sorgenti || {}, magnete: rec.magnete !== false, pps: rec.pps || 60, t: rec.t || 0, sel: null,
     // i progetti nati prima di questa funzione restano com'erano (spento): lo accendi tu dal pulsante
-    fadeTaglio: rec.fadeTaglio ? { attivo: !!rec.fadeTaglio.attivo, ms: rec.fadeTaglio.ms || 200 } : { attivo: false, ms: 200 },
+    fadeTaglio: rec.fadeTaglio ? { attivo: !!rec.fadeTaglio.attivo, ms: rec.fadeTaglio.ms || 200, v2: true } : { attivo: false, ms: 200, v2: true },
   });
+  // progetti della build 14 con il fade «acceso»: lo scrivo sui bordi già presenti, così il loro suono non cambia
+  if (rec.fadeTaglio?.attivo && !rec.fadeTaglio.v2 && M.migraFadeTaglio(S.clips, M.secFadeTaglio(rec.fadeTaglio))) guardia();
   ultimoSnap = snapshot();
   for (const k of [...buffers.keys()]) if (!S.sorgenti[k]) { buffers.delete(k); picchi.delete(k); }
   const daCaricare = Object.keys(S.sorgenti).filter((k) => !buffers.has(k));
@@ -885,7 +888,7 @@ async function apriRegistro(rec) {
 
 async function creaProgetto(nome) {
   await salvaOra();
-  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, pps: 60, t: 0, fadeTaglio: { attivo: true, ms: 200 } };
+  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, pps: 60, t: 0, fadeTaglio: { attivo: true, ms: 200, v2: true } };
   await progettoSalva(rec);
   await apriRegistro(rec);
 }

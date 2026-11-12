@@ -82,8 +82,8 @@ export function calcolaPicchi(buf) {
  * t0 = istante della timeline da cui partire · quando = istante del contesto in cui far partire t0
  * solo = Set di id da suonare (null = tutte). Ritorna i nodi sorgente, per poterli fermare.
  */
-export function programma(c2, clips, buffers, t0, quando, solo = null, fadeTaglio = 0) {
-  const fade = fadeEffettivi(clips, durSrc(buffers), fadeTaglio);
+export function programma(c2, clips, buffers, t0, quando, solo = null) {
+  const fade = fadeEffettivi(clips, durSrc(buffers));
   const nodi = [];
   for (const c of clips) {
     if (solo && !solo.has(c.id)) continue;
@@ -115,11 +115,11 @@ export function programma(c2, clips, buffers, t0, quando, solo = null, fadeTagli
  * Dove non ci sono dissolvenze i campioni escono identici a quelli del file originale (nessun ricampionamento,
  * nessun guadagno, nessun filtro). Ritorna un oggetto simile ad AudioBuffer.
  */
-export function renderizzaDiretto(clips, buffers, { da = 0, a = null, rate, canali = 2, solo = null, fadeTaglio = 0 } = {}) {
+export function renderizzaDiretto(clips, buffers, { da = 0, a = null, rate, canali = 2, solo = null } = {}) {
   const fineT = a ?? durataTotale(clips);
   const f0 = Math.round(da * rate), len = Math.max(1, Math.round(fineT * rate) - f0);
   const out = Array.from({ length: canali }, () => new Float32Array(len));
-  const fade = fadeEffettivi(clips, durSrc(buffers), fadeTaglio);
+  const fade = fadeEffettivi(clips, durSrc(buffers));
   for (const c of clips) {
     if (solo && !solo.has(c.id)) continue;
     const buf = buffers.get(c.src);
