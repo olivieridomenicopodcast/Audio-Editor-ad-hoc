@@ -34,6 +34,7 @@ async function prova(nome, bit) {
     await dl.saveAs(path.join(T, 'out.wav')); return fs.readFileSync(path.join(T, 'out.wav'));
   };
   console.log(nome);
+  await p.evaluate(() => { window.__S.fadeTaglio = { attivo: false, ms: 200 }; }); // prima la base: fade sui tagli spento
   let out = await esporta();
   verifica(Buffer.compare(od, dati(out)) === 0, 'senza modifiche: identico byte per byte');
   await p.evaluate(() => { window.__S.t = 2; }); await p.click('#b-taglia');
@@ -45,6 +46,22 @@ async function prova(nome, bit) {
   verifica(xd.length / fb === od.length / fb - fo.sr, 'dopo il taglio: durata giusta (1 s in meno)');
   verifica(diff(0, 0, f2 - dc) === 0, 'prima del taglio: campioni identici');
   verifica(diff(f3 + dc, f2 + dc, od.length / fb - f3 - dc) === 0, 'dopo il taglio: campioni identici');
+  // fade sui tagli acceso (200 ms): fuori dalla zona del fade identico, dentro la curva a potenza costante
+  await p.evaluate(() => { window.__S.fadeTaglio = { attivo: true, ms: 200 }; });
+  out = await esporta(); const yd = dati(out), nfo = Math.round(fo.sr * 0.2), sb = fo.bit / 8;
+  const camp = (b, idx) => (fo.bit === 16 ? b.readInt16LE(idx * fb) : b.readIntLE(idx * fb, 3));
+  const dif2 = (a0, b0, n) => { let k = 0; for (let i = 0; i < n * fb; i++) if (od[a0 * fb + i] !== yd[b0 * fb + i]) k++; return k; };
+  verifica(dif2(0, 0, f2 - nfo) === 0, 'fade 200 ms: prima della zona del fade i campioni sono identici');
+  verifica(dif2(f3 + nfo, f2 + nfo, od.length / fb - f3 - nfo) === 0, 'fade 200 ms: dopo la zona del fade i campioni sono identici');
+  let okCurva = true;
+  for (const k of [Math.round(nfo * 0.25), Math.round(nfo * 0.5), Math.round(nfo * 0.9)]) {
+    const iOut = f2 - nfo + k;                        // dentro il fade-out della clip a sinistra
+    const attesoOut = Math.round(camp(od, iOut) * Math.sin((f2 - iOut) / nfo * Math.PI / 2));
+    const iIn = f2 + k;                               // dentro il fade-in della clip a destra (stesso punto del file: f3 + k)
+    const attesoIn = Math.round(camp(od, f3 + k) * Math.sin(k / nfo * Math.PI / 2));
+    if (Math.abs(camp(yd, iOut) - attesoOut) > 2 || Math.abs(camp(yd, iIn) - attesoIn) > 2) okCurva = false;
+  }
+  verifica(okCurva, 'fade 200 ms: dentro la zona i campioni seguono la curva seno/coseno');
   verifica(!errs.length, 'nessun errore nella pagina');
   await b.close();
 }

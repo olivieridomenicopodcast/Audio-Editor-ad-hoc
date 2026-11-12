@@ -39,6 +39,7 @@
   </div>
   <div id="area">
     <canvas id="tl"></canvas>
+    <button id="b-fadetaglio" class="mini mani fadet" type="button" aria-label="Fade automatico sui tagli"></button>
     <button id="b-maniglie" class="mini mani" type="button"></button>
     <div id="vuoto"><p>Nessun audio.</p><p>Tocca <b>+ Importa</b> e scegli le registrazioni.</p></div>
   </div>
@@ -93,6 +94,16 @@
     <label>Più lungo di <b id="p-min-v"></b><input id="p-min" type="range" min="0.3" max="3" step="0.1" value="0.8"></label>
     <label>Lascia una pausa di <b id="p-man-v"></b><input id="p-man" type="range" min="0.1" max="1" step="0.05" value="0.4"></label>
     <div class="pulsanti"><button value="annulla" class="btn">Annulla</button><button id="p-vai" value="ok" class="btn pieno">Applica</button></div>
+  </form>
+</dialog>
+
+<dialog id="d-fadetaglio">
+  <form method="dialog">
+    <h2>Fade sui tagli</h2>
+    <p class="nota">Dove una clip ha un taglio staccato (per esempio dopo aver tolto un respiro), la clip a sinistra sfuma in uscita e quella a destra in entrata. Se le due metà sono ancora attaccate non cambia niente. Inizio e fine dei file restano intatti. Vale per questo progetto.</p>
+    <label class="interr"><span>Fade automatico sui tagli</span><input id="ft-attivo" type="checkbox"></label>
+    <label>Durata del fade <b id="ft-ms-v"></b><input id="ft-ms" type="range" min="10" max="1000" step="10" value="200"></label>
+    <div class="pulsanti"><button value="annulla" class="btn">Annulla</button><button value="ok" class="btn pieno">Applica</button></div>
   </form>
 </dialog>
 

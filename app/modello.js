@@ -64,27 +64,43 @@ export function fadeAutomatici(clips) {
   return m;
 }
 
-/** Dissolvenze che si vedono (e si trascinano): quelle scelte o quelle della sovrapposizione, la maggiore. */
-export function fadeVisibili(clips) {
-  const auto = fadeAutomatici(clips), m = new Map();
-  for (const c of clips) m.set(c.id, { fi: Math.max(c.fadeIn || 0, auto.get(c.id).fi), fo: Math.max(c.fadeOut || 0, auto.get(c.id).fo) });
+/**
+ * Dissolvenze che si vedono (e si trascinano) di ogni clip: Map id → { fi, fo, sx, dx, tagSx, tagDx }.
+ * Ordine di priorità su ogni bordo: sovrapposizione (crossfade a X) > dissolvenza scelta a mano (> 0) > fade automatico sui tagli.
+ * Il «fade sui tagli» (fadeTaglio, in secondi; 0 = spento) si applica solo a un bordo che hai TAGLIATO dentro il file
+ * e che NON è continuo con la clip vicina: se tagli e lasci le due metà attaccate non cambia niente (niente buco di volume),
+ * il fade compare quando le metà si separano (per esempio togliendo un respiro). Inizio e fine naturali dei file restano intatti.
+ */
+export function fadeVisibili(clips, durSorgente = () => Infinity, fadeTaglio = 0) {
+  const ov = fadeAutomatici(clips), m = new Map();
+  for (const c of clips) {
+    const sx = clips.some((x) => x !== c && continue_(x, c));
+    const dx = clips.some((x) => x !== c && continue_(c, x));
+    const tagSx = c.off > EPS, tagDx = c.off + c.dur < durSorgente(c.src) - EPS;
+    const o = ov.get(c.id);
+    const autoI = fadeTaglio > 0 && !sx && tagSx && o.fi === 0 ? fadeTaglio : 0;
+    const autoO = fadeTaglio > 0 && !dx && tagDx && o.fo === 0 ? fadeTaglio : 0;
+    m.set(c.id, {
+      fi: Math.max((c.fadeIn || 0) > 0 ? c.fadeIn : autoI, o.fi),
+      fo: Math.max((c.fadeOut || 0) > 0 ? c.fadeOut : autoO, o.fo),
+      sx, dx, tagSx, tagDx,
+    });
+  }
   return m;
 }
 
 /**
- * Dissolvenze effettive di ogni clip (quelle scelte + il micro-declick). Ritorna Map id → {fi, fo}.
- * Il micro-declick c'è SOLO su un bordo che hai tagliato tu (dentro il file) e che non è un taglio continuo:
+ * Dissolvenze effettive di ogni clip (quelle che si vedono + il micro-declick). Ritorna Map id → {fi, fo}.
+ * Il micro-declick (3 ms) c'è solo su un bordo che hai tagliato tu (dentro il file) e che non è un taglio continuo:
  * l'inizio e la fine naturali di un file restano intatti, così senza modifiche l'audio esce identico.
- * durSorgente(src) = durata del file in secondi (senza, ogni bordo si considera tagliato).
+ * durSorgente(src) = durata del file in secondi (senza, ogni bordo si considera tagliato). fadeTaglio: vedi fadeVisibili.
  */
-export function fadeEffettivi(clips, durSorgente = () => Infinity) {
-  const m = new Map(), auto = fadeAutomatici(clips);
+export function fadeEffettivi(clips, durSorgente = () => Infinity, fadeTaglio = 0) {
+  const vis = fadeVisibili(clips, durSorgente, fadeTaglio), m = new Map();
   for (const c of clips) {
-    const sx = clips.some((x) => x !== c && continue_(x, c));
-    const dx = clips.some((x) => x !== c && continue_(c, x));
-    const taglioSx = c.off > EPS, taglioDx = c.off + c.dur < durSorgente(c.src) - EPS;
-    const fi = Math.max(c.fadeIn || 0, auto.get(c.id).fi, !sx && taglioSx ? DECLICK : 0);
-    const fo = Math.max(c.fadeOut || 0, auto.get(c.id).fo, !dx && taglioDx ? DECLICK : 0);
+    const v = vis.get(c.id);
+    const fi = Math.max(v.fi, !v.sx && v.tagSx ? DECLICK : 0);
+    const fo = Math.max(v.fo, !v.dx && v.tagDx ? DECLICK : 0);
     const tot = fi + fo, lim = Math.max(0, c.dur - 0.001);
     const k = tot > lim && tot > 0 ? lim / tot : 1;
     m.set(c.id, { fi: fi * k, fo: fo * k });
@@ -190,6 +206,7 @@ export function gestoTrim(orig, id, lato, d, ripple, durSorgente) {
 
 /** Imposta la dissolvenza in entrata ('in') o in uscita ('out') di una clip. */
 export function gestoFade(orig, id, lato, valore) {
+  if (valore < 0.0005) valore = 0.001; // trascinato a zero = «nessuna dissolvenza»: 1 ms, così non torna quella automatica
   const clips = copia(orig);
   const c = trova(clips, id);
   if (lato === 'in') { c.fadeIn = valore; c.fadeOut = Math.min(c.fadeOut || 0, Math.max(0, c.dur - Math.max(0, valore) - 0.002)); }

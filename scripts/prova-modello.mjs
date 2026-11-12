@@ -81,3 +81,37 @@ st.salva(s3); s3.marcatori.push(1);
 assert.ok(st.annulla(s3)); assert.deepEqual(s3.marcatori, []);
 assert.ok(st.ripristina(s3)); assert.deepEqual(s3.marcatori, [1]);
 console.log('ok: tutte le prove del modello passano');
+
+// ---- fade automatico sui tagli (fadeTaglio) ----
+{
+  const dur10 = () => 10, N = 0.2;
+  const nuovo = () => ({ clips: [{ id: 'a', src: 's', nome: 'x', start: 0, off: 0, dur: 10, fadeIn: 0, fadeOut: 0 }], marcatori: [] });
+  // taglio e metà ancora attaccate: NESSUN fade (niente buco di volume)
+  let st2 = nuovo(); const r1 = M.taglia(st2, 4);
+  let f = M.fadeEffettivi(st2.clips, dur10, N);
+  assert.equal(f.get('a').fo, 0); assert.equal(f.get(r1).fi, 0);
+  // taglio, secondo taglio e tolgo il pezzo in mezzo (ripple): fade di 0,2 s sui due bordi rimasti
+  const r2 = M.taglia(st2, 6); const mezzo = M.clipA(st2.clips, 5).id; M.elimina(st2, mezzo, true);
+  f = M.fadeEffettivi(st2.clips, dur10, N);
+  assert.ok(Math.abs(f.get('a').fo - N) < 1e-9, 'la clip a sinistra sfuma in uscita');
+  assert.ok(Math.abs(f.get(r2).fi - N) < 1e-9, 'la clip a destra sfuma in entrata');
+  assert.equal(f.get('a').fi, 0, 'l\'inizio naturale del file non si tocca');
+  assert.equal(f.get(r2).fo, 0, 'la fine naturale del file non si tocca');
+  // spento: solo il micro-declick
+  f = M.fadeEffettivi(st2.clips, dur10, 0);
+  assert.equal(f.get('a').fo, M.DECLICK);
+  // una dissolvenza scelta a mano (anche più corta) ha la precedenza
+  st2.clips.find((c) => c.id === 'a').fadeOut = 0.05;
+  assert.ok(Math.abs(M.fadeEffettivi(st2.clips, dur10, N).get('a').fo - 0.05) < 1e-9);
+  // trascinando a zero resta una dissolvenza esplicita di 1 ms (non torna quella automatica)
+  const g0 = M.gestoFade(st2.clips, 'a', 'out', 0);
+  assert.ok(M.trova(g0, 'a').fadeOut > 0 && M.trova(g0, 'a').fadeOut <= 0.001 + 1e-12);
+  // dove c'è un crossfade a X vince la sovrapposizione, non il fade sui tagli
+  const x = [{ id: 'A', src: 's', nome: 'A', start: 0, off: 1, dur: 5, fadeIn: 0, fadeOut: 0 }, { id: 'B', src: 's', nome: 'B', start: 4.9, off: 2, dur: 3, fadeIn: 0, fadeOut: 0 }];
+  const fx2 = M.fadeEffettivi(x, dur10, N);
+  assert.ok(Math.abs(fx2.get('A').fo - 0.1) < 1e-9 && Math.abs(fx2.get('B').fi - 0.1) < 1e-9, 'sovrapposizione: 0,1 s, non 0,2 s');
+  // clip corte: i fade si rimpiccioliscono, non si sovrappongono
+  const corta = [{ id: 'C', src: 's', nome: 'C', start: 0, off: 1, dur: 0.1, fadeIn: 0, fadeOut: 0 }];
+  const fc = M.fadeEffettivi(corta, dur10, N).get('C'); assert.ok(fc.fi + fc.fo <= 0.1);
+}
+console.log('ok: fade sui tagli');

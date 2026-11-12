@@ -9,7 +9,7 @@ import { zipStore } from './zip.js';
 const $ = (s) => document.querySelector(s);
 
 /* ---------- stato ---------- */
-const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0 };
+const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0, fadeTaglio: { attivo: true, ms: 200 } };
 if (location.search.includes('debug')) window.__S = S; // solo per le prove automatiche
 const buffers = new Map();   // id sorgente → AudioBuffer
 const picchi = new Map();    // id sorgente → picchi per la forma d'onda
@@ -63,11 +63,15 @@ const clipSel = () => (S.sel ? M.trova(S.clips, S.sel) : null);
 /* ---------- salvataggio sul telefono ---------- */
 const nuovoIdProg = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 let guardaT, ultimoSnap = '';
-const snapshot = () => JSON.stringify([S.clips, S.marcatori, S.nome]);
+const snapshot = () => JSON.stringify([S.clips, S.marcatori, S.nome, S.fadeTaglio]);
 const registro = () => ({
   v: 1, id: S.id, nome: S.nome, aggiornato: S.aggiornato, rate: S.rate, clips: S.clips, marcatori: S.marcatori,
-  sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t,
+  sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t, fadeTaglio: S.fadeTaglio,
 });
+/** Fade automatico sui tagli, in secondi (0 = spento), e durata dei file: servono a calcolare le dissolvenze. */
+const fadeT = () => (S.fadeTaglio?.attivo ? (S.fadeTaglio.ms || 0) / 1000 : 0);
+const durSrc = (id) => buffers.get(id)?.duration ?? Infinity;
+const visibili = () => M.fadeVisibili(S.clips, durSrc, fadeT());
 function guardia() { clearTimeout(guardaT); guardaT = setTimeout(salvaOra, 500); }
 /** Salva subito il progetto aperto. «aggiornato» cambia solo se sono cambiati clip, marcatori o nome (non per un semplice scorrimento). */
 async function salvaOra() {
@@ -171,15 +175,16 @@ function disegnaClip(c, sel, vis) {
   // dissolvenze
   const curva = (k) => Math.sin(k * Math.PI / 2);
   g.fillStyle = 'rgba(46,25,118,.5)'; g.strokeStyle = C.bianco; g.lineWidth = 1.5;
-  if (c.fadeIn > 0) {
-    const fw = c.fadeIn * S.pps;
+  const vf = vis.get(c.id);
+  if (vf.fi > 0) {
+    const fw = vf.fi * S.pps;
     g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0, y0 + h);
     for (let k = 0; k <= 16; k++) g.lineTo(x0 + fw * k / 16, y0 + h * (1 - curva(k / 16)));
     g.closePath(); g.fill();
     g.beginPath(); for (let k = 0; k <= 16; k++) g[k ? 'lineTo' : 'moveTo'](x0 + fw * k / 16, y0 + h * (1 - curva(k / 16))); g.stroke();
   }
-  if (c.fadeOut > 0) {
-    const fw = c.fadeOut * S.pps;
+  if (vf.fo > 0) {
+    const fw = vf.fo * S.pps;
     g.beginPath();
     for (let k = 16; k >= 0; k--) g[k === 16 ? 'moveTo' : 'lineTo'](x1 - fw * k / 16, y0 + h * (1 - curva(k / 16)));
     g.lineTo(x1, y0); g.closePath(); g.fill();
@@ -237,7 +242,7 @@ function disegna() {
   // corsia della traccia
   g.fillStyle = C['ui-pannello']; g.fillRect(Math.max(0, x00), TOP - 6, W, alt() + 12);
   const ord = [...S.clips].sort((a, b) => a.start - b.start);
-  const vis = M.fadeVisibili(S.clips);
+  const vis = visibili();
   for (const c of ord) if (c.id !== S.sel) disegnaClip(c, false, vis);
   const s = clipSel(); if (s) disegnaClip(s, true, vis);
   disegnaCrossfade();
@@ -263,6 +268,7 @@ function aggiorna() {
   $('#b-play').innerHTML = icona(riprod ? 'stop' : 'play');
   $('#b-play').setAttribute('aria-label', riprod ? 'Pausa' : 'Riproduci');
   $('#magnete').classList.toggle('on', S.magnete);
+  $('#b-fadetaglio').classList.toggle('on', !!S.fadeTaglio?.attivo);
   $('#magnete').setAttribute('aria-pressed', S.magnete);
   const ch = $('#chips');
   if (ch.dataset.k !== JSON.stringify(S.marcatori)) {
@@ -314,7 +320,7 @@ function bersaglio(x, y) {
   const c = clipSel(), h = alt();
   if (c) {
     const x0 = xDi(c.start), x1 = xDi(M.fine(c));
-    const vf = M.fadeVisibili(S.clips).get(c.id);
+    const vf = visibili().get(c.id);
     const fadeI = x0 + vf.fi * S.pps, fadeO = x1 - vf.fo * S.pps;
     if (y >= TOP - 14 && y <= TOP + 34) {
       const di = Math.abs(x - fadeI), dof = Math.abs(x - fadeO);
@@ -345,7 +351,7 @@ cv.addEventListener('pointerdown', (e) => {
   }
   const b = bersaglio(x, y);
   if (riprod && b.tipo !== 'pan' && b.tipo !== 'clip') ferma();
-  gesto = { tipo: b.tipo, id: b.c?.id, x0: x, y0: y, t0: S.t, orig: M.copia(S.clips), mosso: false, ts: performance.now(), u: false, vis: M.fadeVisibili(S.clips) };
+  gesto = { tipo: b.tipo, id: b.c?.id, x0: x, y0: y, t0: S.t, orig: M.copia(S.clips), mosso: false, ts: performance.now(), u: false, vis: visibili() };
 });
 
 cv.addEventListener('pointermove', (e) => {
@@ -427,7 +433,7 @@ function suona() {
   const c = contesto();
   if (S.t >= totale() - 0.02) S.t = 0;
   const tc = c.currentTime + 0.06;
-  riprod = { t0: S.t, tc, nodi: programma(c, S.clips, buffers, S.t, tc) };
+  riprod = { t0: S.t, tc, nodi: programma(c, S.clips, buffers, S.t, tc, null, fadeT()) };
   cicloRiprod();
 }
 function cicloRiprod() {
@@ -509,6 +515,24 @@ dPause.addEventListener('close', () => {
     return r.pause > 0;
   });
   toast(r.pause ? `${r.pause} pause accorciate: tolti ${r.rimosso.toFixed(1).replace('.', ',')} s` : 'Nessuna pausa abbastanza lunga: prova ad alzare la soglia.');
+});
+
+/* ---------- fade automatico sui tagli ---------- */
+const dFT = doc('#d-fadetaglio');
+rotula('#ft-ms', '#ft-ms-v', (v) => v + ' ms');
+$('#ft-attivo').addEventListener('change', () => { $('#ft-ms').disabled = !$('#ft-attivo').checked; });
+$('#b-fadetaglio').innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l8 12M21 6l-8 12M12 3v18" stroke-dasharray="0"/></svg>`;
+$('#b-fadetaglio').onclick = () => {
+  $('#ft-attivo').checked = !!S.fadeTaglio?.attivo;
+  $('#ft-ms').value = S.fadeTaglio?.ms || 200; $('#ft-ms').disabled = !$('#ft-attivo').checked;
+  $('#ft-ms').dispatchEvent(new Event('input'));
+  apri(dFT);
+};
+dFT.addEventListener('close', () => {
+  if (dFT.returnValue !== 'ok') return;
+  S.fadeTaglio = { attivo: $('#ft-attivo').checked, ms: +$('#ft-ms').value };
+  fineModifica();
+  toast(S.fadeTaglio.attivo ? `Fade sui tagli: ${S.fadeTaglio.ms} ms` : 'Fade sui tagli spento');
 });
 
 /* ---------- progetti ---------- */
@@ -664,6 +688,7 @@ function validaRegistro(r) {
     v: 1, id: r.id, nome: String(r.nome || 'Montaggio').slice(0, 60), aggiornato: Math.max(0, num(r.aggiornato)), rate: Math.max(0, num(r.rate)),
     clips, marcatori: (Array.isArray(r.marcatori) ? r.marcatori : []).map(Number).filter(Number.isFinite), sorgenti,
     magnete: r.magnete !== false, pps: clamp(num(r.pps, 60), 4, 1500), t: Math.max(0, num(r.t)),
+    fadeTaglio: { attivo: !!r.fadeTaglio?.attivo, ms: clamp(Math.round(num(r.fadeTaglio?.ms, 200)), 5, 1000) },
   };
 }
 
@@ -753,7 +778,7 @@ dEsp.addEventListener('close', async () => {
   try {
     attesa('Calcolo il montaggio…'); await respira();
     if ($('#e-tipo').value === 'wav') {
-      const buf = renderizzaDiretto(S.clips, buffers, { rate, canali });
+      const buf = renderizzaDiretto(S.clips, buffers, { rate, canali, fadeTaglio: fadeT() });
       attesa('Creo il file WAV…'); await respira();
       await consegna(codificaWav(buf, bit), nome + '.wav');
     } else {
@@ -762,7 +787,7 @@ dEsp.addEventListener('close', async () => {
       for (let i = 0; i < ord.length; i++) {
         const c = ord[i];
         attesa(`Clip ${i + 1} di ${ord.length}…`); await respira();
-        const buf = renderizzaDiretto(S.clips, buffers, { da: c.start, a: M.fine(c), rate, canali, solo: new Set([c.id]) });
+        const buf = renderizzaDiretto(S.clips, buffers, { da: c.start, a: M.fine(c), rate, canali, solo: new Set([c.id]), fadeTaglio: fadeT() });
         const nf = `${pad(i + 1)}_${nomeSicuro(c.nome)}.wav`;
         files.push({ name: nf, data: new Uint8Array(await codificaWav(buf, bit).arrayBuffer()) });
         righe.push(`${nf}  →  inizio ${tempo(c.start)}  ·  durata ${tempo(c.dur)}`);
@@ -832,6 +857,8 @@ async function apriRegistro(rec) {
   Object.assign(S, {
     id: rec.id, nome: rec.nome || 'Montaggio', aggiornato: rec.aggiornato || 0, rate: rec.rate || 0, clips: rec.clips || [],
     marcatori: rec.marcatori || [], sorgenti: rec.sorgenti || {}, magnete: rec.magnete !== false, pps: rec.pps || 60, t: rec.t || 0, sel: null,
+    // i progetti nati prima di questa funzione restano com'erano (spento): lo accendi tu dal pulsante
+    fadeTaglio: rec.fadeTaglio ? { attivo: !!rec.fadeTaglio.attivo, ms: rec.fadeTaglio.ms || 200 } : { attivo: false, ms: 200 },
   });
   ultimoSnap = snapshot();
   for (const k of [...buffers.keys()]) if (!S.sorgenti[k]) { buffers.delete(k); picchi.delete(k); }
@@ -858,7 +885,7 @@ async function apriRegistro(rec) {
 
 async function creaProgetto(nome) {
   await salvaOra();
-  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, pps: 60, t: 0 };
+  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, pps: 60, t: 0, fadeTaglio: { attivo: true, ms: 200 } };
   await progettoSalva(rec);
   await apriRegistro(rec);
 }

@@ -96,3 +96,8 @@ dialog input[type=text],dialog input[type=password]{display:block;width:100%;mar
 .prog .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:99px;background:var(--arancione);color:var(--viola);font:400 12px/1.2 var(--font-titoli);letter-spacing:.05em;vertical-align:middle}
 
 .mani{position:absolute;right:8px;bottom:8px;width:44px;height:38px;opacity:.9}
+.mani.fadet{right:auto;left:8px}
+.mani.on{background:var(--arancione);border-color:var(--arancione);color:var(--viola)}
+dialog label.interr{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:16px;color:var(--ui-testo)}
+dialog label.interr input{width:28px;height:28px;accent-color:var(--arancione);margin:0}
+dialog input[type=range]:disabled{opacity:.35}
