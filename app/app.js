@@ -199,7 +199,7 @@ function disegnaClip(c, sel, vis) {
   percorsoClip(x0, y0, w, h, 10); g.lineWidth = sel ? 3 : 1.5; g.strokeStyle = sel ? C.bianco : C.giallo; g.stroke();
   if (sel) {
     g.fillStyle = C.bianco;
-    for (const x of [x0, x1]) { percorsoClip(x - 5, y0 + h / 2 - 22, 10, 44, 5); g.fill(); }
+    if (maniglie !== 'nascoste') for (const x of [x0, x1]) { percorsoClip(x - 5, yManiglia(h) - 22, 10, 44, 5); g.fill(); }
     const v = vis.get(c.id);
     for (const x of [x0 + v.fi * S.pps, x1 - v.fo * S.pps]) {
       g.beginPath(); g.arc(x, y0, 10, 0, Math.PI * 2); g.fillStyle = C.bianco; g.fill();
@@ -287,6 +287,29 @@ const ptrs = new Map();
 let gesto = null, pinch = null;
 const durSorgente = (c) => buffers.get(c.src)?.duration ?? c.off + c.dur;
 
+/* Posizione delle maniglie di trim: al centro della clip, in basso (per vedere la forma d'onda) oppure nascoste. */
+const CHIAVE_MANI = 'aeah-maniglie';
+let maniglie = 'centro';
+try { const v = localStorage.getItem(CHIAVE_MANI); if (v === 'basso' || v === 'nascoste') maniglie = v; } catch { /* niente */ }
+const yManiglia = (h) => TOP + (maniglie === 'basso' ? Math.max(h / 2 + 8, h - 30) : h / 2);
+const ICONA_MANI = {
+  centro: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M6.5 9v6" stroke-width="3.5"/>',
+  basso: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M6.5 13.5v4" stroke-width="3.5"/>',
+  nascoste: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M5 19 19 5"/>',
+};
+const TESTO_MANI = { centro: 'Maniglie di trim al centro', basso: 'Maniglie di trim in basso', nascoste: 'Maniglie di trim nascoste' };
+function aggiornaManiglie() {
+  const b = $('#b-maniglie');
+  b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONA_MANI[maniglie]}</svg>`;
+  b.setAttribute('aria-label', TESTO_MANI[maniglie] + ' (tocca per cambiare)');
+}
+$('#b-maniglie').onclick = () => {
+  maniglie = maniglie === 'centro' ? 'basso' : maniglie === 'basso' ? 'nascoste' : 'centro';
+  try { localStorage.setItem(CHIAVE_MANI, maniglie); } catch { /* niente */ }
+  aggiornaManiglie(); toast(TESTO_MANI[maniglie], 1400); aggiorna();
+};
+aggiornaManiglie();
+
 function bersaglio(x, y) {
   const c = clipSel(), h = alt();
   if (c) {
@@ -297,7 +320,8 @@ function bersaglio(x, y) {
       const di = Math.abs(x - fadeI), dof = Math.abs(x - fadeO);
       if (Math.min(di, dof) <= 26) return { tipo: di <= dof ? 'fadeIn' : 'fadeOut', c };
     }
-    if (y >= TOP && y <= TOP + h) {
+    // maniglie di trim: al centro prendono tutta l'altezza del bordo; in basso solo la fascia bassa; nascoste non ci sono
+    if (maniglie !== 'nascoste' && y >= TOP && y <= TOP + h && (maniglie === 'centro' || y >= yManiglia(h) - 30)) {
       const dl = Math.abs(x - x0), dr = Math.abs(x - x1);
       if (Math.min(dl, dr) <= 24) return { tipo: dl <= dr ? 'trimSx' : 'trimDx', c };
     }

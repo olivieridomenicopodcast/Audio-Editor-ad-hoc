@@ -25,12 +25,12 @@ button{cursor:pointer}
 .banner button{background:var(--viola);color:var(--bianco);border:0;border-radius:8px;padding:6px 10px}
 
 main{flex:1;min-height:0;display:flex;flex-direction:column}
-.info{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;gap:8px}
+.info{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;gap:6px}
 .tempo{white-space:nowrap}
-.tempo b{font:400 28px/1 var(--font-titoli);letter-spacing:.04em}
-.tempo small{margin-left:6px;color:var(--ui-tenue);font-size:13px}
-.info-az{display:flex;gap:6px}
-.mini{width:40px;height:36px;border-radius:9px;border:1.5px solid var(--ui-linea);background:var(--ui-pannello);font:400 20px/1 var(--font-titoli);display:grid;place-items:center;padding:0}
+.tempo b{font:400 26px/1 var(--font-titoli);letter-spacing:.04em}
+.tempo small{margin-left:4px;color:var(--ui-tenue);font-size:13px}
+.info-az{display:flex;gap:4px}
+.mini{width:37px;height:36px;border-radius:9px;border:1.5px solid var(--ui-linea);background:var(--ui-pannello);font:400 20px/1 var(--font-titoli);display:grid;place-items:center;padding:0}
 .mini:active{background:var(--ui-linea)}
 .mini.magnete{color:var(--ui-tenue)}
 .mini.magnete.on{background:var(--arancione);border-color:var(--arancione);color:var(--viola)}
@@ -94,3 +94,5 @@ dialog input[type=text],dialog input[type=password]{display:block;width:100%;mar
 .prog .az{display:flex;gap:6px;flex-wrap:wrap}
 .prog .az button{padding:7px 9px;font-size:13px}
 .prog .tag{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:99px;background:var(--arancione);color:var(--viola);font:400 12px/1.2 var(--font-titoli);letter-spacing:.05em;vertical-align:middle}
+
+.mani{position:absolute;right:8px;bottom:8px;width:44px;height:38px;opacity:.9}
