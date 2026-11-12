@@ -9,7 +9,7 @@ import { zipStore } from './zip.js';
 const $ = (s) => document.querySelector(s);
 
 /* ---------- stato ---------- */
-const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, pps: 60, t: 0, sel: null, rate: 0, fadeTaglio: { attivo: true, ms: 200, v2: true } };
+const S = { id: null, aggiornato: 0, clips: [], marcatori: [], sorgenti: {}, nome: 'Montaggio', magnete: true, magneteDist: false, pps: 60, t: 0, sel: null, rate: 0, fadeTaglio: { attivo: true, ms: 200, v2: true } };
 if (location.search.includes('debug')) window.__S = S; // solo per le prove automatiche
 const buffers = new Map();   // id sorgente → AudioBuffer
 const picchi = new Map();    // id sorgente → picchi per la forma d'onda
@@ -66,15 +66,18 @@ let guardaT, ultimoSnap = '';
 const snapshot = () => JSON.stringify([S.clips, S.marcatori, S.nome, S.fadeTaglio]);
 const registro = () => ({
   v: 1, id: S.id, nome: S.nome, aggiornato: S.aggiornato, rate: S.rate, clips: S.clips, marcatori: S.marcatori,
-  sorgenti: S.sorgenti, magnete: S.magnete, pps: S.pps, t: S.t, fadeTaglio: S.fadeTaglio,
+  sorgenti: S.sorgenti, magnete: S.magnete, magneteDist: S.magneteDist, pps: S.pps, t: S.t, fadeTaglio: S.fadeTaglio,
 });
 /** Fade sui tagli in vigore adesso (secondi, 0 = spento) e durata dei file: servono a scrivere/calcolare le dissolvenze. */
 const fadeT = () => M.secFadeTaglio(S.fadeTaglio);
-/** Distanza del magnete (0–1000 ms): preferenza di questo telefono. 0 = le clip si attaccano del tutto; sopra lo zero lasciano questo spazio. */
+/**
+ * Il magnete ha tre posizioni (tocco sul pulsante): ATTACCA (S.magnete, senza distanza) → DISTANZA A SCELTA (S.magnete + S.magneteDist)
+ * → SPENTO → di nuovo Attacca. La distanza (0–1000 ms, di partenza 150) è una preferenza di questo telefono; a 0 si comporta come Attacca.
+ */
 const CHIAVE_DIST = 'aeah-dist-magnete';
-let distMs = 0;
-try { const v = Math.round(+localStorage.getItem(CHIAVE_DIST)); if (v > 0 && v <= 1000) distMs = v; } catch { /* niente */ }
-const distS = () => (S.magnete ? distMs / 1000 : 0);
+let distMs = 150;
+try { const r = localStorage.getItem(CHIAVE_DIST); if (r !== null && Number.isFinite(+r)) distMs = clamp(Math.round(+r), 0, 1000); } catch { /* niente */ }
+const distS = () => (S.magnete && S.magneteDist ? distMs / 1000 : 0);
 const durSrc = (id) => buffers.get(id)?.duration ?? Infinity;
 const visibili = () => M.fadeVisibili(S.clips, durSrc);
 function guardia() { clearTimeout(guardaT); guardaT = setTimeout(salvaOra, 500); }
@@ -273,7 +276,7 @@ function aggiorna() {
   $('#b-play').innerHTML = icona(riprod ? 'stop' : 'play');
   $('#b-play').setAttribute('aria-label', riprod ? 'Pausa' : 'Riproduci');
   $('#magnete').classList.toggle('on', S.magnete);
-  $('#magnete-badge').textContent = distMs > 0 ? String(distMs) : '';
+  $('#magnete-badge').textContent = S.magnete && S.magneteDist ? String(distMs) : '';
   $('#b-fadetaglio').classList.toggle('on', !!S.fadeTaglio?.attivo);
   $('#magnete').setAttribute('aria-pressed', S.magnete);
   const ch = $('#chips');
@@ -476,17 +479,20 @@ $('#b-marc').onclick = () => modifica(() => { const r = M.marcatore(S, S.t); toa
 $('#b-annulla').onclick = () => { ferma(); if (storia.annulla(S)) fineModifica(); };
 $('#b-ripristina').onclick = () => { ferma(); if (storia.ripristina(S)) fineModifica(); };
 const testoMagnete = () => (!S.magnete ? 'Magnete spento: le clip restano dove sono.'
-  : distMs > 0 ? `Magnete acceso: dopo un trim o un Elimina le clip lasciano ${distMs} ms di spazio. Tieni premuto per cambiarlo.`
-    : 'Magnete acceso: le clip restano attaccate a sinistra. Tieni premuto per lasciare uno spazio.');
+  : S.magneteDist ? `Magnete a distanza: dopo un trim o un Elimina le clip lasciano ${distMs} ms di spazio. Tieni premuto per cambiarlo.`
+    : 'Magnete ATTACCA: le clip restano attaccate a sinistra.');
 const dMag = $('#d-magnete');
-(() => { // tocco breve = acceso/spento · pressione lunga (mezzo secondo) = distanza
+(() => { // tocco breve = Attacca → distanza a scelta → spento → Attacca · pressione lunga (mezzo secondo) = scelta della distanza
   const b = $('#magnete'); let t = null, lungo = false;
   b.addEventListener('pointerdown', () => { lungo = false; clearTimeout(t); t = setTimeout(() => { lungo = true; $('#mg-ms').value = distMs; $('#mg-ms').dispatchEvent(new Event('input')); apri(dMag); }, 500); });
   for (const n of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(n, () => clearTimeout(t));
   b.addEventListener('contextmenu', (e) => e.preventDefault());
   b.addEventListener('click', () => {
     if (lungo) { lungo = false; return; }
-    S.magnete = !S.magnete; toast(testoMagnete(), 3200); aggiorna(); guardia();
+    if (!S.magnete) { S.magnete = true; S.magneteDist = false; }          // spento → Attacca
+    else if (!S.magneteDist) S.magneteDist = true;                         // Attacca → distanza a scelta
+    else { S.magnete = false; S.magneteDist = false; }                     // distanza a scelta → spento
+    toast(testoMagnete(), 3400); aggiorna(); guardia();
   });
 })();
 
@@ -539,11 +545,18 @@ dPause.addEventListener('close', () => {
 
 /* ---------- distanza del magnete ---------- */
 rotula('#mg-ms', '#mg-v', (v) => (v === 0 ? '0 ms (attaccate)' : v + ' ms'));
+// tacche: vicino a 0 e a 150 ms il cursore «scatta»; altrove la scelta è libera (a passi di 5 ms)
+$('#mg-ms').addEventListener('input', () => {
+  const r = $('#mg-ms'), v = +r.value;
+  const t = [0, 150].find((x) => Math.abs(v - x) <= 7);
+  if (t !== undefined && v !== t) { r.value = t; $('#mg-v').textContent = t === 0 ? '0 ms (attaccate)' : t + ' ms'; }
+});
 dMag.addEventListener('close', () => {
   if (dMag.returnValue !== 'ok') return;
   distMs = +$('#mg-ms').value;
   try { localStorage.setItem(CHIAVE_DIST, String(distMs)); } catch { /* niente */ }
-  aggiorna(); toast(distMs ? `Distanza del magnete: ${distMs} ms` : 'Distanza del magnete: 0, le clip si attaccano del tutto', 3000);
+  S.magnete = true; S.magneteDist = true;   // se scegli una distanza, il magnete passa alla modalità a distanza
+  aggiorna(); guardia(); toast(`Magnete a distanza: ${distMs} ms${distMs === 0 ? ' (come Attacca)' : ''}`, 3000);
 });
 
 /* ---------- fade automatico sui tagli ---------- */
@@ -717,7 +730,7 @@ function validaRegistro(r) {
   return {
     v: 1, id: r.id, nome: String(r.nome || 'Montaggio').slice(0, 60), aggiornato: Math.max(0, num(r.aggiornato)), rate: Math.max(0, num(r.rate)),
     clips, marcatori: (Array.isArray(r.marcatori) ? r.marcatori : []).map(Number).filter(Number.isFinite), sorgenti,
-    magnete: r.magnete !== false, pps: clamp(num(r.pps, 60), 4, 1500), t: Math.max(0, num(r.t)),
+    magnete: r.magnete !== false, magneteDist: !!r.magneteDist, pps: clamp(num(r.pps, 60), 4, 1500), t: Math.max(0, num(r.t)),
     fadeTaglio: { attivo: !!r.fadeTaglio?.attivo, ms: clamp(Math.round(num(r.fadeTaglio?.ms, 200)), 5, 1000), v2: !!r.fadeTaglio?.v2 },
   };
 }
@@ -886,7 +899,7 @@ async function apriRegistro(rec) {
   ferma(); storia.svuota();
   Object.assign(S, {
     id: rec.id, nome: rec.nome || 'Montaggio', aggiornato: rec.aggiornato || 0, rate: rec.rate || 0, clips: rec.clips || [],
-    marcatori: rec.marcatori || [], sorgenti: rec.sorgenti || {}, magnete: rec.magnete !== false, pps: rec.pps || 60, t: rec.t || 0, sel: null,
+    marcatori: rec.marcatori || [], sorgenti: rec.sorgenti || {}, magnete: rec.magnete !== false, magneteDist: !!rec.magneteDist, pps: rec.pps || 60, t: rec.t || 0, sel: null,
     // i progetti nati prima di questa funzione restano com'erano (spento): lo accendi tu dal pulsante
     fadeTaglio: rec.fadeTaglio ? { attivo: !!rec.fadeTaglio.attivo, ms: rec.fadeTaglio.ms || 200, v2: true } : { attivo: false, ms: 200, v2: true },
   });
@@ -917,7 +930,7 @@ async function apriRegistro(rec) {
 
 async function creaProgetto(nome) {
   await salvaOra();
-  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, pps: 60, t: 0, fadeTaglio: { attivo: true, ms: 200, v2: true } };
+  const rec = { v: 1, id: nuovoIdProg(), nome, aggiornato: Date.now(), rate: 0, clips: [], marcatori: [], sorgenti: {}, magnete: true, magneteDist: false, pps: 60, t: 0, fadeTaglio: { attivo: true, ms: 200, v2: true } };
   await progettoSalva(rec);
   await apriRegistro(rec);
 }
