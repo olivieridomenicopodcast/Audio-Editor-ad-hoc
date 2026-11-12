@@ -143,3 +143,46 @@ console.log('ok: tutte le prove del modello passano');
   assert.ok(Math.abs(M.fadeEffettivi(sp.clips, () => 10).get(pa.id).fo - N) < 1e-9);
 }
 console.log('ok: fade sui tagli (solo tagli nuovi)');
+
+// ---- magnete con distanza (0–1000 ms) ----
+{
+  const D = 0.15;
+  const base = () => [
+    { id: 'A', src: 's', nome: 'A', start: 0, off: 0, dur: 5, fadeIn: 0, fadeOut: 0 },
+    { id: 'B', src: 's', nome: 'B', start: 5, off: 5, dur: 3, fadeIn: 0, fadeOut: 0 },
+    { id: 'C', src: 's2', nome: 'C', start: 10, off: 0, dur: 2, fadeIn: 0, fadeOut: 0 },   // dopo B c'è GIÀ un buco di 2 s (8 → 10)
+  ];
+  // distanza 0: identico a prima (ripple in diretta, attaccate del tutto)
+  let o = base(), c = M.gestoTrim(o, 'A', 'dx', -1.2, true, 10, null, 0);
+  assert.ok(Math.abs(M.trova(c, 'B').start - 3.8) < 1e-9 && Math.abs(M.trova(c, 'C').start - 8.8) < 1e-9, 'distanza 0: come sempre');
+  // distanza 150 ms, accorcio la coda di A di 1,2 s: mentre trascino NON si sposta niente...
+  c = M.gestoTrim(o, 'A', 'dx', -1.2, true, 10, null, D);
+  assert.equal(M.trova(c, 'B').start, 5); assert.equal(M.trova(c, 'C').start, 10);
+  // ...al rilascio B e C si avvicinano lasciando 150 ms; il buco di 2 s tra B e C resta di 2 s
+  assert.equal(M.chiudiConDistanza(c, o, 'A', 'dx', D), true);
+  assert.ok(Math.abs(M.trova(c, 'B').start - (M.fine(M.trova(c, 'A')) + D)) < 1e-9, 'B a 150 ms da A');
+  assert.ok(Math.abs(M.trova(c, 'C').start - M.fine(M.trova(c, 'B')) - 2) < 1e-9, 'il buco vecchio tra B e C non si tocca');
+  // un trim che toglie meno della distanza non sposta niente
+  c = M.gestoTrim(o, 'A', 'dx', -0.1, true, 10, null, D);
+  assert.equal(M.chiudiConDistanza(c, o, 'A', 'dx', D), false); assert.equal(M.trova(c, 'B').start, 5);
+  // allungare la coda resta un ripple in diretta (le clip dopo seguono, spazi vecchi compresi)
+  c = M.gestoTrim(o, 'B', 'dx', 0.5, true, 10, null, D);
+  assert.ok(Math.abs(M.trova(c, 'C').start - 10.5) < 1e-9);
+  // bordo sinistro: tolgo 1 s dalla testa di B → B resta a 150 ms da A, e C scorre di conseguenza
+  c = M.gestoTrim(o, 'B', 'sx', 1, true, 10, null, D);
+  assert.ok(Math.abs(M.trova(c, 'B').start - 6) < 1e-9, 'durante il trascinamento il contenuto resta fermo');
+  assert.equal(M.chiudiConDistanza(c, o, 'B', 'sx', D), true);
+  assert.ok(Math.abs(M.trova(c, 'B').start - (5 + D)) < 1e-9, 'B a 150 ms da A');
+  assert.ok(Math.abs(M.trova(c, 'C').start - (M.fine(M.trova(c, 'B')) + 2)) < 1e-9, 'e il buco vecchio fino a C resta di 2 s');
+  // elimina con distanza: B (3 s) sostituita da 150 ms di spazio; il buco vecchio fino a C resta
+  const st3 = { clips: base(), marcatori: [] };
+  M.elimina(st3, 'B', true, D);
+  assert.ok(Math.abs(M.trova(st3.clips, 'C').start - (10 - (3 - D))) < 1e-9);
+  // elimina di un pezzo più corto della distanza: niente spostamento
+  const st4 = { clips: [{ id: 'X', src: 's', nome: 'X', start: 0, off: 0, dur: 0.1, fadeIn: 0, fadeOut: 0 }, { id: 'Y', src: 's', nome: 'Y', start: 0.1, off: 1, dur: 2, fadeIn: 0, fadeOut: 0 }], marcatori: [] };
+  M.elimina(st4, 'X', true, D); assert.equal(M.trova(st4.clips, 'Y').start, 0.1);
+  // elimina a distanza 0: come sempre
+  const st5 = { clips: base(), marcatori: [] }; M.elimina(st5, 'B', true, 0);
+  assert.ok(Math.abs(M.trova(st5.clips, 'C').start - 7) < 1e-9);
+}
+console.log('ok: magnete con distanza');

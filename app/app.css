@@ -101,3 +101,6 @@ dialog input[type=text],dialog input[type=password]{display:block;width:100%;mar
 dialog label.interr{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:16px;color:var(--ui-testo)}
 dialog label.interr input{width:28px;height:28px;accent-color:var(--arancione);margin:0}
 dialog input[type=range]:disabled{opacity:.35}
+.mini.magnete{position:relative}
+.mini .badge{position:absolute;right:2px;bottom:1px;font:400 11px/1 var(--font-titoli);letter-spacing:.02em;pointer-events:none}
+#magnete{touch-action:manipulation;-webkit-touch-callout:none}

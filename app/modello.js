@@ -137,13 +137,15 @@ export function taglia(stato, t) {
   return d.id;
 }
 
-/** Elimina una clip. Con il magnete (ripple) le clip che stavano dopo scorrono indietro e chiudono il buco. */
-export function elimina(stato, id, ripple) {
+/** Elimina una clip. Con il magnete (ripple) e distanza 0 le clip che stavano dopo scorrono indietro e chiudono il buco. */
+export function elimina(stato, id, ripple, distanza = 0) {
   const c = trova(stato.clips, id);
   if (!c) return false;
   const f = fine(c);
   stato.clips = stato.clips.filter((x) => x !== c);
-  if (ripple) for (const x of stato.clips) if (x.start >= f - EPS) x.start -= c.dur;
+  // distanza (s) > 0: il pezzo tolto viene sostituito da uno spazio di quella durata (se era più lungo); gli spazi che c'erano già non si toccano
+  const sposta = distanza > 0 ? Math.max(0, c.dur - distanza) : c.dur;
+  if (ripple && sposta > 0) for (const x of stato.clips) if (x.start >= f - EPS) x.start -= sposta;
   return true;
 }
 
@@ -190,8 +192,11 @@ export function gestoSposta(orig, id, nuovoStart) {
  * Con il magnete la clip resta attaccata a sinistra e quelle dopo scorrono (ripple).
  * durSorgente = durata totale del file, per non uscire dall'audio disponibile.
  * ft = fade sui tagli (secondi) da scrivere sul bordo trascinato (che diventa un taglio nuovo); null = non toccarlo.
+ * distanza = distanza del magnete in secondi (0 = attaccate del tutto, come sempre).
  */
-export function gestoTrim(orig, id, lato, d, ripple, durSorgente, ft = null) {
+export function gestoTrim(orig, id, lato, d, ripple, durSorgente, ft = null, distanza = 0) {
+  // con una distanza > 0 un trim che ACCORCIA non sposta le altre clip mentre trascini: lo fa chiudiConDistanza() al rilascio
+  if (distanza > 0 && ripple && (lato === 'sx' ? d > 0 : d < 0)) ripple = false;
   const clips = copia(orig);
   const c = trova(clips, id);
   const o = trova(orig, id);
@@ -212,6 +217,26 @@ export function gestoTrim(orig, id, lato, d, ripple, durSorgente, ft = null) {
   }
   normalizzaFade(c);
   return clips;
+}
+
+/**
+ * Da chiamare al RILASCIO di un trim che accorcia, quando il magnete ha una distanza > 0: il pezzo tolto viene sostituito
+ * da uno spazio di `distanza` secondi (le clip dopo si avvicinano, ma non si attaccano). Se il pezzo tolto era più corto
+ * della distanza non si muove niente. Gli spazi che c'erano già prima non si toccano. Ritorna true se ha spostato qualcosa.
+ * clips = lista dopo il trim (senza ripple), orig = lista prima del trim.
+ */
+export function chiudiConDistanza(clips, orig, id, lato, distanza) {
+  if (!(distanza > 0)) return false;
+  const o = trova(orig, id), c = trova(clips, id);
+  if (!o || !c) return false;
+  const tolto = lato === 'sx' ? c.off - o.off : o.dur - c.dur;
+  if (tolto <= distanza + EPS) return false;
+  const sposta = tolto - distanza, f = fine(o);
+  for (const x of clips) {
+    if (x.id === id) { if (lato === 'sx') x.start -= sposta; }   // il bordo sinistro tagliato torna a `distanza` dal vicino
+    else if (x.start >= f - EPS) x.start -= sposta;
+  }
+  return true;
 }
 
 /** Imposta la dissolvenza in entrata ('in') o in uscita ('out') di una clip. */

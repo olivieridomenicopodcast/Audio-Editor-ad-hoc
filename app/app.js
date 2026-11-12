@@ -40,7 +40,7 @@ $('#b-inizio').innerHTML = icona('inizio');
 $('#b-fine').innerHTML = icona('fine');
 $('#b-annulla').innerHTML = icona('annulla');
 $('#b-ripristina').innerHTML = icona('ripristina');
-$('#magnete').innerHTML = icona('magnete');
+$('#magnete').innerHTML = icona('magnete') + '<span class="badge" id="magnete-badge"></span>';
 
 /* ---------- utilità ---------- */
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -70,6 +70,11 @@ const registro = () => ({
 });
 /** Fade sui tagli in vigore adesso (secondi, 0 = spento) e durata dei file: servono a scrivere/calcolare le dissolvenze. */
 const fadeT = () => M.secFadeTaglio(S.fadeTaglio);
+/** Distanza del magnete (0–1000 ms): preferenza di questo telefono. 0 = le clip si attaccano del tutto; sopra lo zero lasciano questo spazio. */
+const CHIAVE_DIST = 'aeah-dist-magnete';
+let distMs = 0;
+try { const v = Math.round(+localStorage.getItem(CHIAVE_DIST)); if (v > 0 && v <= 1000) distMs = v; } catch { /* niente */ }
+const distS = () => (S.magnete ? distMs / 1000 : 0);
 const durSrc = (id) => buffers.get(id)?.duration ?? Infinity;
 const visibili = () => M.fadeVisibili(S.clips, durSrc);
 function guardia() { clearTimeout(guardaT); guardaT = setTimeout(salvaOra, 500); }
@@ -268,6 +273,7 @@ function aggiorna() {
   $('#b-play').innerHTML = icona(riprod ? 'stop' : 'play');
   $('#b-play').setAttribute('aria-label', riprod ? 'Pausa' : 'Riproduci');
   $('#magnete').classList.toggle('on', S.magnete);
+  $('#magnete-badge').textContent = distMs > 0 ? String(distMs) : '';
   $('#b-fadetaglio').classList.toggle('on', !!S.fadeTaglio?.attivo);
   $('#magnete').setAttribute('aria-pressed', S.magnete);
   const ch = $('#chips');
@@ -393,7 +399,7 @@ cv.addEventListener('pointermove', (e) => {
         const p = M.puntiAggancio(gesto.orig, o.id, S.t), bordo = sx ? o.start : M.fine(o);
         d = M.aggancia(bordo + d, p, th) - bordo;
       }
-      S.clips = M.gestoTrim(gesto.orig, o.id, sx ? 'sx' : 'dx', d, S.magnete, durSorgente(o), fadeT());
+      S.clips = M.gestoTrim(gesto.orig, o.id, sx ? 'sx' : 'dx', d, S.magnete, durSorgente(o), fadeT(), distS());
       break;
     }
     case 'fadeIn': muta(); S.clips = M.gestoFade(gesto.orig, o.id, 'in', gesto.vis.get(o.id).fi + dt); break;
@@ -415,6 +421,7 @@ function fineGesto(e) {
     } else if (gs.tipo === 'clip') S.sel = gs.id;
     else if (gs.tipo === 'pan') S.sel = null;
   }
+  if (gs.u && (gs.tipo === 'trimSx' || gs.tipo === 'trimDx')) M.chiudiConDistanza(S.clips, gs.orig, gs.id, gs.tipo === 'trimSx' ? 'sx' : 'dx', distS());
   if (gs.u) storia.scartaSeUguale(S);
   fineModifica();
 }
@@ -463,12 +470,25 @@ $('#b-taglia').onclick = () => {
 };
 $('#b-elimina').onclick = () => {
   if (!clipSel()) return;
-  modifica(() => { M.elimina(S, S.sel, S.magnete); S.sel = null; });
+  modifica(() => { M.elimina(S, S.sel, S.magnete, distS()); S.sel = null; });
 };
 $('#b-marc').onclick = () => modifica(() => { const r = M.marcatore(S, S.t); toast(r === 'aggiunto' ? 'Marcatore aggiunto' : 'Marcatore tolto', 1200); });
 $('#b-annulla').onclick = () => { ferma(); if (storia.annulla(S)) fineModifica(); };
 $('#b-ripristina').onclick = () => { ferma(); if (storia.ripristina(S)) fineModifica(); };
-$('#magnete').onclick = () => { S.magnete = !S.magnete; toast(S.magnete ? 'Magnete acceso: le clip restano attaccate a sinistra.' : 'Magnete spento: le clip restano dove sono.', 2200); aggiorna(); guardia(); };
+const testoMagnete = () => (!S.magnete ? 'Magnete spento: le clip restano dove sono.'
+  : distMs > 0 ? `Magnete acceso: dopo un trim o un Elimina le clip lasciano ${distMs} ms di spazio. Tieni premuto per cambiarlo.`
+    : 'Magnete acceso: le clip restano attaccate a sinistra. Tieni premuto per lasciare uno spazio.');
+const dMag = $('#d-magnete');
+(() => { // tocco breve = acceso/spento · pressione lunga (mezzo secondo) = distanza
+  const b = $('#magnete'); let t = null, lungo = false;
+  b.addEventListener('pointerdown', () => { lungo = false; clearTimeout(t); t = setTimeout(() => { lungo = true; $('#mg-ms').value = distMs; $('#mg-ms').dispatchEvent(new Event('input')); apri(dMag); }, 500); });
+  for (const n of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(n, () => clearTimeout(t));
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+  b.addEventListener('click', () => {
+    if (lungo) { lungo = false; return; }
+    S.magnete = !S.magnete; toast(testoMagnete(), 3200); aggiorna(); guardia();
+  });
+})();
 
 const zoom = (k) => { S.pps = clamp(S.pps * k, 4, 1500); aggiorna(); guardia(); };
 $('#zoom-piu').onclick = () => zoom(1.5);
@@ -515,6 +535,15 @@ dPause.addEventListener('close', () => {
     return r.pause > 0;
   });
   toast(r.pause ? `${r.pause} pause accorciate: tolti ${r.rimosso.toFixed(1).replace('.', ',')} s` : 'Nessuna pausa abbastanza lunga: prova ad alzare la soglia.');
+});
+
+/* ---------- distanza del magnete ---------- */
+rotula('#mg-ms', '#mg-v', (v) => (v === 0 ? '0 ms (attaccate)' : v + ' ms'));
+dMag.addEventListener('close', () => {
+  if (dMag.returnValue !== 'ok') return;
+  distMs = +$('#mg-ms').value;
+  try { localStorage.setItem(CHIAVE_DIST, String(distMs)); } catch { /* niente */ }
+  aggiorna(); toast(distMs ? `Distanza del magnete: ${distMs} ms` : 'Distanza del magnete: 0, le clip si attaccano del tutto', 3000);
 });
 
 /* ---------- fade automatico sui tagli ---------- */
