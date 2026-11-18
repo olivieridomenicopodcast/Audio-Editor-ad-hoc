@@ -1,0 +1,19 @@
+{
+ "v": 1,
+ "id": "pmwlose4oitme",
+ "nome": "Montaggio",
+ "aggiornato": 1794980070024,
+ "rate": 0,
+ "clips": [],
+ "marcatori": [],
+ "sorgenti": {},
+ "magnete": true,
+ "magneteDist": false,
+ "pps": 60,
+ "t": 0,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
