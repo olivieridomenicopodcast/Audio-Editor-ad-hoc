@@ -29,6 +29,8 @@ const ICONE = {
   fine: '<path d="M18 5v14M5 5l10 7-10 7z"/>',
   annulla: '<path d="M8 6 3 11l5 5M3 11h11a4 4 0 0 1 0 8H8"/>',
   ripristina: '<path d="m16 6 5 5-5 5M21 11H10a4 4 0 0 0 0 8h6"/>',
+  clipInizio: '<path d="M7 4H4v16h3M21 6 11 12l10 6z"/>',
+  clipFine: '<path d="M17 4h3v16h-3M3 6l10 6-10 6z"/>',
   magnete: '<path d="M5 3v8a7 7 0 0 0 14 0V3h-4v8a3 3 0 0 1-6 0V3zM5 7h4M15 7h4"/>',
 };
 const icona = (n) => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONE[n]}</svg>`;
@@ -40,6 +42,8 @@ $('#b-inizio').innerHTML = icona('inizio');
 $('#b-fine').innerHTML = icona('fine');
 $('#b-annulla').innerHTML = icona('annulla');
 $('#b-ripristina').innerHTML = icona('ripristina');
+$('#b-clip-ini').innerHTML = icona('clipInizio');
+$('#b-clip-fin').innerHTML = icona('clipFine');
 $('#magnete').innerHTML = icona('magnete') + '<span class="badge" id="magnete-badge"></span>';
 
 /* ---------- utilità ---------- */
@@ -268,6 +272,7 @@ function aggiorna() {
   $('#vuoto').hidden = S.clips.length > 0;
   $('#b-taglia').disabled = !M.clipA(S.clips, S.t);
   $('#b-elimina').disabled = !clipSel();
+  $('#b-clip-ini').disabled = $('#b-clip-fin').disabled = !clipSel();
   $('#b-cross').disabled = !clipSel();
   $('#b-pause').disabled = !S.clips.length;
   $('#b-annulla').disabled = !storia.puoAnnullare();
@@ -459,6 +464,9 @@ function ferma() {
   riprod = null; aggiorna(); guardia();
 }
 $('#b-play').onclick = () => (riprod ? ferma() : suona());
+// cursore all'inizio / alla fine della clip selezionata
+$('#b-clip-ini').onclick = () => { const c = clipSel(); if (!c) return; ferma(); S.t = clamp(c.start, 0, totale()); aggiorna(); guardia(); };
+$('#b-clip-fin').onclick = () => { const c = clipSel(); if (!c) return; ferma(); S.t = clamp(M.fine(c), 0, totale()); aggiorna(); guardia(); };
 $('#b-inizio').onclick = () => { ferma(); S.t = 0; aggiorna(); guardia(); };
 $('#b-fine').onclick = () => { ferma(); S.t = totale(); aggiorna(); guardia(); };
 
