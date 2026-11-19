@@ -1,0 +1,242 @@
+{
+ "v": 1,
+ "id": "pmwn4mmxm3cv8",
+ "nome": "ottaviani 4",
+ "aggiornato": 1795067743929,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmwn4s0540",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 0,
+   "off": 6.349458333333334,
+   "dur": 2.4651249999999947,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4tiop1",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 2.6151249999999946,
+   "off": 9.041145833333328,
+   "dur": 6.478020833333326,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4ture2",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 9.24314583333332,
+   "off": 15.831666666666653,
+   "dur": 10.051208333333337,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4u56r3",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 19.606854166666658,
+   "off": 26.52349999999999,
+   "dur": 4.73664583333332,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4uc6c4",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 24.630999999999975,
+   "off": 31.62733333333331,
+   "dur": 3.9210625000000014,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4ukad5",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 29.009874999999976,
+   "off": 35.89839583333332,
+   "dur": 2.7782083333333425,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4urgj6",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 31.938083333333317,
+   "off": 39.003166666666665,
+   "dur": 7.161374999999985,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4uzna7",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 39.4057083333333,
+   "off": 46.55360416666665,
+   "dur": 5.491416666666673,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4vduz8",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 45.303374999999974,
+   "off": 52.530958333333324,
+   "dur": 2.1424583333333302,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4vixx9",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 47.5958333333333,
+   "off": 55.054666666666655,
+   "dur": 2.546500000000016,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4vouha",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 50.545458333333315,
+   "off": 58.12460416666667,
+   "dur": 22.54025,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4w9p2b",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 73.80758333333333,
+   "off": 82.89610416666667,
+   "dur": 3.375333333333316,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4wi5ic",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 77.45166666666664,
+   "off": 86.426125,
+   "dur": 9.633104166666655,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4x1i1d",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 87.4832083333333,
+   "off": 96.33891666666665,
+   "dur": 20.23747916666663,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4xnxne",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 108.14568749999994,
+   "off": 116.93420833333327,
+   "dur": 7.857666666666702,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4y40yf",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 116.29866666666665,
+   "off": 125.21687499999997,
+   "dur": 3.230624999999961,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4yxnhh",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 119.92602603668944,
+   "off": 137.86212110294548,
+   "dur": 7.601147000224344,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwn4zermi",
+   "src": "scmwn4myj60",
+   "nome": "Ep04 Ottaviani",
+   "start": 127.84655095578685,
+   "off": 145.82146075127844,
+   "dur": 737.1828725820551,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmwn4myj60": {
+   "nome": "Ep04 Ottaviani",
+   "durata": 883.0043333333333,
+   "canali": 1,
+   "bytes": 127157454
+  }
+ },
+ "magnete": true,
+ "magneteDist": true,
+ "pps": 67.52651157894547,
+ "t": 127.76148035698915,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
