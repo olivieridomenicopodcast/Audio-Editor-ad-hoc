@@ -109,6 +109,6 @@ dialog input[type=range]:disabled{opacity:.35}
 .tacche span::before{content:"";position:absolute;top:0;left:50%;width:2px;height:8px;margin-left:-1px;background:var(--arancione);border-radius:1px}
 .tacche span.fine{left:auto;right:0;transform:none;padding-top:10px}
 .tacche span.fine::before{left:auto;right:6px;background:var(--ui-linea)}
-.mani.clip-i{right:auto;left:calc(50% - 50px)}
-.mani.clip-f{right:auto;left:calc(50% + 6px)}
+.mani.clip-i{right:auto;left:58px}
+.mani.clip-f{right:auto;left:108px}
 .mini:disabled{opacity:.35}
