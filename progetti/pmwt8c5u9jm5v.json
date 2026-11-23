@@ -1,0 +1,230 @@
+{
+ "v": 1,
+ "id": "pmwt8c5u9jm5v",
+ "nome": "Da rold 6",
+ "aggiornato": 1795440373952,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmwtaqfcf2",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 0,
+   "off": 4.68932620966417,
+   "dur": 1.5611779950435383,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtare7y3",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 1.7945914037791226,
+   "off": 6.8797055673859795,
+   "dur": 1.0947798505554616,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtarnur4",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 3.0893712543345844,
+   "off": 8.829488882548608,
+   "dur": 1.7219175762520704,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtartkm5",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 5.374094455034207,
+   "off": 12.07620492238794,
+   "dur": 4.763743393284628,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtas2n36",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 10.530657620752388,
+   "off": 17.349905871714235,
+   "dur": 1.1898468942331153,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtas63b7",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 11.920504514985502,
+   "off": 19.019265094762645,
+   "dur": 1.6653333333333258,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtas9od8",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 13.78583784831883,
+   "off": 21.265594847665824,
+   "dur": 3.9453333333333394,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtasekb9",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 18.20517822668948,
+   "off": 26.42873727005388,
+   "dur": 1.2502332969921213,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtaskgqa",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 19.6554115236816,
+   "off": 28.391896304596784,
+   "dur": 2.4346666666666614,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtasov5b",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 22.29007819034826,
+   "off": 31.544562913351957,
+   "dur": 3.3186666666666618,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtastl2c",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 25.80874485701492,
+   "off": 35.31229668160755,
+   "dur": 1.6014653039884017,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtasy3pd",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 27.61021016100332,
+   "off": 37.33492096222738,
+   "dur": 4.306855113443195,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtat5b0e",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 32.11706527444652,
+   "off": 42.45872300624478,
+   "dur": 3.526666666666685,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtatm3kh",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 36.113908646160894,
+   "off": 60.27392373189668,
+   "dur": 2.8793454225311024,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtatv10i",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 39.193254068692,
+   "off": 63.85350938063424,
+   "dur": 5.396000000000001,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtau0v7j",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 44.78925406869201,
+   "off": 70.22629375414687,
+   "dur": 7.229533579750189,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwtau92vk",
+   "src": "scmwtanx1q0",
+   "nome": "Da Rold_Ep06",
+   "start": 52.63233531826704,
+   "off": 77.98354460582075,
+   "dur": 1316.1887887275132,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmwtanx1q0": {
+   "nome": "Da Rold_Ep06",
+   "durata": 1394.1723333333334,
+   "canali": 1,
+   "bytes": 200765646
+  }
+ },
+ "magnete": true,
+ "magneteDist": true,
+ "pps": 36.951604651702546,
+ "t": 52.0187876484422,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
