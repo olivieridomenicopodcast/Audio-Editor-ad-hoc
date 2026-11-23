@@ -2,7 +2,7 @@
  "v": 1,
  "id": "pmwsfefijmpd5",
  "nome": "Da Rold 5",
- "aggiornato": 1795420379429,
+ "aggiornato": 1795421196226,
  "rate": 48000,
  "clips": [
   {
@@ -1019,7 +1019,55 @@
    "nome": "Da Rold_Ep05",
    "start": 407.0335625,
    "off": 703.4802500000002,
-   "dur": 581.1454166666671,
+   "dur": 7.3373333333333335,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwszd60l0",
+   "src": "scmwsffnxg0",
+   "nome": "Da Rold_Ep05",
+   "start": 414.73808333333335,
+   "off": 711.4910208333334,
+   "dur": 3.5114374999999995,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwszdhpx2",
+   "src": "scmwsffnxg0",
+   "nome": "Da Rold_Ep05",
+   "start": 418.44952083333334,
+   "off": 727.7969166666667,
+   "dur": 2.4775000000000205,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwszeqmz5",
+   "src": "scmwsffnxg0",
+   "nome": "Da Rold_Ep05",
+   "start": 421.27077083333336,
+   "off": 747.4548124999999,
+   "dur": 7.454687500000034,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwszf7t16",
+   "src": "scmwsffnxg0",
+   "nome": "Da Rold_Ep05",
+   "start": 428.9254583333334,
+   "off": 755.3298125,
+   "dur": 529.295854166667,
    "fadeIn": 0,
    "fadeOut": 0,
    "ftSx": 0.2
@@ -1037,7 +1085,7 @@
  "magnete": true,
  "magneteDist": true,
  "pps": 60,
- "t": 406.8335625,
+ "t": 428.7254583333334,
  "fadeTaglio": {
   "attivo": true,
   "ms": 200,
