@@ -2,7 +2,7 @@
  "v": 1,
  "id": "pmwudvinfykq7",
  "nome": "ottaviani 5",
- "aggiornato": 1795518626112,
+ "aggiornato": 1795521675590,
  "rate": 48000,
  "clips": [
   {
@@ -438,12 +438,48 @@
    "ftDx": 0.2
   },
   {
-   "id": "cmwulfh18r",
+   "id": "cmwun6w2t1",
    "src": "scmwudvo2815",
    "nome": "Ep05 Ottaviani",
-   "start": 265.6389310595935,
-   "off": 463.2040733961,
-   "dur": 697.8909266039004,
+   "start": 265.7140760615942,
+   "off": 479.84638331584415,
+   "dur": 6.889761543413442,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwun78922",
+   "src": "scmwudvo2815",
+   "nome": "Ep05 Ottaviani",
+   "start": 272.80383760500763,
+   "off": 487.1002891048025,
+   "dur": 7.6718127156453875,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwun80r25",
+   "src": "scmwudvo2815",
+   "nome": "Ep05 Ottaviani",
+   "start": 280.875650320653,
+   "off": 507.7854204120283,
+   "dur": 8.071628717186002,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwun8rp38",
+   "src": "scmwudvo2815",
+   "nome": "Ep05 Ottaviani",
+   "start": 289.2463808980992,
+   "off": 531.5045836231789,
+   "dur": 629.5904163768215,
    "fadeIn": 0,
    "fadeOut": 0,
    "ftSx": 0.2
@@ -461,7 +497,7 @@
  "magnete": true,
  "magneteDist": true,
  "pps": 97.83211031301488,
- "t": 265.3517280955288,
+ "t": 289.66585621370007,
  "fadeTaglio": {
   "attivo": true,
   "ms": 200,
