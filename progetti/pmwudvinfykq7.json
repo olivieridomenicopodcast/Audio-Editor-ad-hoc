@@ -1,0 +1,38 @@
+{
+ "v": 1,
+ "id": "pmwudvinfykq7",
+ "nome": "ottaviani 5",
+ "aggiornato": 1795505949052,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmwudvo8216",
+   "src": "scmwudvo2815",
+   "nome": "Ep05 Ottaviani",
+   "start": 0,
+   "off": 3.759375,
+   "dur": 1157.335625,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmwudvo2815": {
+   "nome": "Ep05 Ottaviani",
+   "durata": 1161.095,
+   "canali": 1,
+   "bytes": 167202498
+  }
+ },
+ "magnete": true,
+ "magneteDist": true,
+ "pps": 60,
+ "t": 2.7703125,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
