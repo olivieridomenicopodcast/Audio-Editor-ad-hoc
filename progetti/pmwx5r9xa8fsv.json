@@ -1,0 +1,37 @@
+{
+ "v": 1,
+ "id": "pmwx5r9xa8fsv",
+ "nome": "step 6",
+ "aggiornato": 1795673709816,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmwx5rhmo1k",
+   "src": "scmwx5rhfv1j",
+   "nome": "Matteo Lonetti",
+   "start": 0,
+   "off": 0,
+   "dur": 917.44,
+   "fadeIn": 0,
+   "fadeOut": 0
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmwx5rhfv1j": {
+   "nome": "Matteo Lonetti",
+   "durata": 917.44,
+   "canali": 1,
+   "bytes": 176148524
+  }
+ },
+ "magnete": true,
+ "magneteDist": false,
+ "pps": 60,
+ "t": 0,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
