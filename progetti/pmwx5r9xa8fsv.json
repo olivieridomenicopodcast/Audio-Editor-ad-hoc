@@ -2,7 +2,7 @@
  "v": 1,
  "id": "pmwx5r9xa8fsv",
  "nome": "step 6",
- "aggiornato": 1795679040772,
+ "aggiornato": 1795681488721,
  "rate": 48000,
  "clips": [
   {
@@ -131,7 +131,55 @@
    "nome": "Matteo Lonetti",
    "start": 81.58885416666664,
    "off": 93.55135416666666,
-   "dur": 823.8886458333333,
+   "dur": 4.628645833333337,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxacaz50",
+   "src": "scmwx5rhfv1j",
+   "nome": "Matteo Lonetti",
+   "start": 86.61749999999998,
+   "off": 100.10812499999999,
+   "dur": 10.265166666666659,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxacus71",
+   "src": "scmwx5rhfv1j",
+   "nome": "Matteo Lonetti",
+   "start": 96.88266666666664,
+   "off": 110.37329166666665,
+   "dur": 4.672520833333351,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxadmzu3",
+   "src": "scmwx5rhfv1j",
+   "nome": "Matteo Lonetti",
+   "start": 101.75518749999999,
+   "off": 130.96556249999998,
+   "dur": 20.35727083333333,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxae78l4",
+   "src": "scmwx5rhfv1j",
+   "nome": "Matteo Lonetti",
+   "start": 122.31245833333332,
+   "off": 152.6025208333333,
+   "dur": 764.8374791666666,
    "fadeIn": 0,
    "fadeOut": 0,
    "ftSx": 0.2
@@ -149,7 +197,7 @@
  "magnete": true,
  "magneteDist": true,
  "pps": 60,
- "t": 82.09643749999996,
+ "t": 122.11245833333332,
  "fadeTaglio": {
   "attivo": true,
   "ms": 200,
