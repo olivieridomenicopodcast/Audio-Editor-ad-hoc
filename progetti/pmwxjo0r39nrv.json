@@ -1,0 +1,86 @@
+{
+ "v": 1,
+ "id": "pmwxjo0r39nrv",
+ "nome": "ottaviani 6",
+ "aggiornato": 1795697576591,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmwxjo7xr1",
+   "src": "scmwxjo7p10",
+   "nome": "Ep06 Ottaviani",
+   "start": 0,
+   "off": 3.465625,
+   "dur": 10.454020833333331,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxjxypg0",
+   "src": "scmwxjo7p10",
+   "nome": "Ep06 Ottaviani",
+   "start": 10.65402083333333,
+   "off": 14.17589583333333,
+   "dur": 9.49154166666666,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxjy98m1",
+   "src": "scmwxjo7p10",
+   "nome": "Ep06 Ottaviani",
+   "start": 20.52056249999999,
+   "off": 24.087749999999993,
+   "dur": 4.217645833333329,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxjyghh2",
+   "src": "scmwxjo7p10",
+   "nome": "Ep06 Ottaviani",
+   "start": 24.938208333333318,
+   "off": 28.546020833333323,
+   "dur": 11.842874999999996,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2,
+   "ftDx": 0.2
+  },
+  {
+   "id": "cmwxjyyap4",
+   "src": "scmwxjo7p10",
+   "nome": "Ep06 Ottaviani",
+   "start": 37.199833333333316,
+   "off": 47.89168749999998,
+   "dur": 1490.9846458333336,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmwxjo7p10": {
+   "nome": "Ep06 Ottaviani",
+   "durata": 1538.8763333333334,
+   "canali": 1,
+   "bytes": 221603010
+  }
+ },
+ "magnete": true,
+ "magneteDist": true,
+ "pps": 60,
+ "t": 37.795687499999985,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
