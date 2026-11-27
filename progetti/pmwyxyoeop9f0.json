@@ -1,0 +1,38 @@
+{
+ "v": 1,
+ "id": "pmwyxyoeop9f0",
+ "nome": "Turrini 6",
+ "aggiornato": 1795781551074,
+ "rate": 48000,
+ "clips": [
+  {
+   "id": "cmwyxyts2d",
+   "src": "scmwyxytnvc",
+   "nome": "Turrini Ep06 Coppi Bartali_001",
+   "start": 0,
+   "off": 1.753125,
+   "dur": 734.8085416666667,
+   "fadeIn": 0,
+   "fadeOut": 0,
+   "ftSx": 0.2
+  }
+ ],
+ "marcatori": [],
+ "sorgenti": {
+  "scmwyxytnvc": {
+   "nome": "Turrini Ep06 Coppi Bartali_001",
+   "durata": 736.5616666666666,
+   "canali": 1,
+   "bytes": 106069698
+  }
+ },
+ "magnete": true,
+ "magneteDist": true,
+ "pps": 60,
+ "t": 0,
+ "fadeTaglio": {
+  "attivo": true,
+  "ms": 200,
+  "v2": true
+ }
+}
